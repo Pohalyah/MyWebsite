@@ -163,7 +163,8 @@
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
 
-  function filterPokemon() {
+  // Rendre la fonction globale pour que onclick fonctionne
+window.filterPokemon = function() {
     const input = normalize(document.getElementById("pattern").value.trim());
 
     if (!input) {
@@ -171,19 +172,14 @@
       return;
     }
 
-    // remplacer "_" par "." pour regex et ignorer majuscules/minuscules
     const regex = new RegExp("^" + escapeRegex(input).replace(/_/g, ".") + "$", "i");
 
-    const matches = pokemonList.filter(p => {
-        // normaliser le nom du Pokémon
-        const name = normalize(p);
-        return regex.test(name);
-    });
+    const matches = pokemonList.filter(p => regex.test(normalize(p)));
 
     document.getElementById("results").innerHTML = matches.length
       ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
       : "<em>Aucun Pokémon trouvé</em>";
-}
+};
 
 </script>
 
