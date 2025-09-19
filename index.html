@@ -153,20 +153,25 @@
       "Roc-de-Fer", "Chef-de-Fer", "Terapagos", "Pêchaminus"
     ];
 
-    function filterPokemon() {
-    const pattern = document.getElementById("pattern").value.trim();
-    if (!pattern) {
-      document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
-      return;
-    }
+    function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // échappe les caractères spéciaux
+}
 
-    const regex = new RegExp("^" + pattern.replace(/_/g, ".") + "$", "i"); // insensible à la casse
-    const matches = pokemonList.map(p => p.trim()).filter(p => regex.test(p)); // on trim chaque nom
+function filterPokemon() {
+  const input = document.getElementById("pattern").value.trim().toLowerCase();
+  if (!input) {
+    document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
+    return;
+  }
 
-    const resultsDiv = document.getElementById("results");
-    resultsDiv.innerHTML = matches.length
-      ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
-      : "<em>Aucun Pokémon trouvé</em>";
+  const regex = new RegExp("^" + escapeRegex(input).replace(/_/g, ".") + "$", "i");
+
+  const matches = pokemonList.filter(p => regex.test(p));
+
+  document.getElementById("results").innerHTML = matches.length
+    ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
+    : "<em>Aucun Pokémon trouvé</em>";
+}
 }
 
   </script>
