@@ -153,26 +153,33 @@
       "Roc-de-Fer", "Chef-de-Fer", "Terapagos", "Pêchaminus"
     ];
 
-    function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // échappe les caractères spéciaux
-}
-
-function filterPokemon() {
-  const input = document.getElementById("pattern").value.trim().toLowerCase();
-  if (!input) {
-    document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
-    return;
+  // Fonction pour échapper les caractères spéciaux dans le regex
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  const regex = new RegExp("^" + escapeRegex(input).replace(/_/g, ".") + "$", "i");
+  // Fonction pour normaliser les chaînes (minuscules + suppression des accents)
+  function normalize(str) {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
 
-  const matches = pokemonList.filter(p => regex.test(p));
+  function filterPokemon() {
+    const input = normalize(document.getElementById("pattern").value.trim());
+    
+    if (!input) {
+      document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
+      return;
+    }
 
-  document.getElementById("results").innerHTML = matches.length
-    ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
-    : "<em>Aucun Pokémon trouvé</em>";
-}
+    const regex = new RegExp("^" + escapeRegex(input).replace(/_/g, ".") + "$");
 
-  </script>
+    const matches = pokemonList.filter(p => regex.test(normalize(p)));
+
+    document.getElementById("results").innerHTML = matches.length
+      ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
+      : "<em>Aucun Pokémon trouvé</em>";
+  }
+</script>
+
 </body>
 </html>
