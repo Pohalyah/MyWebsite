@@ -154,24 +154,21 @@
     ];
 
     function filterPokemon() {
-      const pattern = document.getElementById("pattern").value.toLowerCase().trim();
-      if (!pattern) {
-        document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
-        return;
-      }
-
-      // On transforme "_" en "."
-      const regex = new RegExp("^" + pattern.replace(/_/g, ".") + "$" = "i");
-
-      // Filtrage
-      const matches = pokemonList.filter(p => regex.test(p));
-
-      // Affichage
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = matches.length
-        ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
-        : "<em>Aucun Pokémon trouvé</em>";
+    const pattern = document.getElementById("pattern").value.trim();
+    if (!pattern) {
+      document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
+      return;
     }
+
+    const regex = new RegExp("^" + pattern.replace(/_/g, ".") + "$", "i"); // insensible à la casse
+    const matches = pokemonList.map(p => p.trim()).filter(p => regex.test(p)); // on trim chaque nom
+
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = matches.length
+      ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
+      : "<em>Aucun Pokémon trouvé</em>";
+}
+
   </script>
 </body>
 </html>
