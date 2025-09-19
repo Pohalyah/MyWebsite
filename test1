@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Trouve ton Pokémon</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    input { margin: 0.5rem; padding: 0.5rem; }
+    .results { margin-top: 1rem; }
+    .pokemon { padding: 0.3rem; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Trouver un Pokémon</h1>
+
+  <label>Mot avec _ pour lettres inconnues :</label><br>
+  <input type="text" id="pattern" placeholder="ex: pi__chu"><br>
+
+  <button onclick="filterPokemon()">Chercher</button>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    // Liste simplifiée - tu mettras les 1000 noms
+    const pokemonList = [
+      "pikachu", "raichu", "bulbasaur", "ivysaur", "venusaur",
+      "charmander", "charmeleon", "charizard", "squirtle",
+      "wartortle", "blastoise", "mew", "mewtwo"
+    ];
+
+    function filterPokemon() {
+      const pattern = document.getElementById("pattern").value.toLowerCase();
+      const regex = new RegExp("^" + pattern.replace(/_/g, ".") + "$");
+
+      const matches = pokemonList.filter(p => regex.test(p));
+
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = matches.length
+        ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
+        : "<em>Aucun Pokémon trouvé</em>";
+    }
+  </script>
+</body>
+</html>
