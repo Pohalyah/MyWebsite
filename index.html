@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Trouve ton Pokémon</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background: #f8f9fa; color: #333; }
+    h1 { color: #e3350d; }
+    input { margin: 0.5rem 0; padding: 0.5rem; font-size: 1rem; }
+    button { padding: 0.5rem 1rem; margin-top: 0.5rem; background: #e3350d; color: white; border: none; cursor: pointer; }
+    button:hover { background: #b52a0a; }
+    .results { margin-top: 1.5rem; }
+    .pokemon { padding: 0.3rem; border-bottom: 1px solid #ddd; }
+    em { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Trouver un Pokémon</h1>
+
+  <p>
+    Tape un mot avec <strong>_</strong> pour les lettres inconnues.<br>
+    Exemple : <code>pi__chu</code> → <em>pikachu</em>
+  </p>
+
+  <input type="text" id="pattern" placeholder="ex: pi__chu" size="30">
+  <br>
+  <button onclick="filterPokemon()">Chercher</button>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    // --- Liste des Pokémon (tous les +1000) ---
+    // Pour l'exemple, je mets une petite liste.
+    // Je peux te fournir la liste complète si tu veux.
+    const pokemonList = [
+      "bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard",
+      "squirtle","wartortle","blastoise","caterpie","metapod","butterfree",
+      "weedle","kakuna","beedrill","pidgey","pidgeotto","pidgeot",
+      "rattata","raticate","pikachu","raichu","mew","mewtwo"
+    ];
+
+    function filterPokemon() {
+      const pattern = document.getElementById("pattern").value.toLowerCase().trim();
+      if (!pattern) {
+        document.getElementById("results").innerHTML = "<em>Écris un motif ci-dessus</em>";
+        return;
+      }
+
+      // On transforme "_" en "."
+      const regex = new RegExp("^" + pattern.replace(/_/g, ".") + "$");
+
+      // Filtrage
+      const matches = pokemonList.filter(p => regex.test(p));
+
+      // Affichage
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = matches.length
+        ? matches.map(p => `<div class="pokemon">${p}</div>`).join("")
+        : "<em>Aucun Pokémon trouvé</em>";
+    }
+  </script>
+</body>
+</html>
