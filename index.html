@@ -32,9 +32,20 @@
     Exemple : <code>pi__chu</code> → <em>pikachu</em>
   </p>
 
+  <div>
+    <label>
+      <input type="radio" name="searchType" value="pokemon" checked>
+      Pokémon
+    </label>
+    <label>
+      <input type="radio" name="searchType" value="talent">
+      Talent
+    </label>
+  </div>
+
   <input type="text" id="pattern" placeholder="ex: pi__chu" size="30">
   <br>
-  <button onclick="filterPokemon()">Chercher</button>
+  <button onclick="filterSearch()">Chercher</button>
 
   <div class="results" id="results"></div>
 
