@@ -74,10 +74,8 @@
         <a href="PkmnFinder.html">Pokémon Finder</a>
       </div>
 
-      <button class="menu-button" onclick="toggleDropdown('downloadDropdown')">Téléchargement ▾</button>
-      <div id="downloadDropdown" class="dropdown">
-        <a href="#">Bientôt disponible</a>
-      </div>
+      <a href="download.html" class="menu-button" style="text-decoration:none; color:white;">Téléchargement</a>
+
     </nav>
   </header>
 
@@ -85,20 +83,25 @@
 
   </main>
 
-  <script>
-    function toggleDropdown(id) {
-      const dropdown = document.getElementById(id);
-      dropdown.classList.toggle('show');
-    }
+<script>
+function toggleDropdown(id) {
+  const dropdowns = document.querySelectorAll('.dropdown');
+  dropdowns.forEach(dd => {
+    if (dd.id !== id) dd.classList.remove('show'); // fermer les autres
+  });
+  const dropdown = document.getElementById(id);
+  dropdown.classList.toggle('show'); // ouvrir/fermer celui-ci
+}
 
-    // Fermer le menu si clic en dehors
-    window.onclick = function(event) {
-      if (!event.target.matches('.menu-button')) {
-        const dropdowns = document.querySelectorAll('.dropdown');
-        dropdowns.forEach(dd => dd.classList.remove('show'));
-      }
-    }
-  </script>
+// Fermer le menu si clic en dehors
+window.onclick = function(event) {
+  if (!event.target.matches('.menu-button')) {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dd => dd.classList.remove('show'));
+  }
+}
+</script>
+
 
 </body>
 </html>
