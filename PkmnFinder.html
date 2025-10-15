@@ -4,7 +4,58 @@
   <meta charset="UTF-8">
   <title>Trouve ton Pokémon</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background: #f8f9fa; color: #333; }
+    /* En-tête et menu */
+header {
+  background: #fff;
+  padding: 1rem;
+  border-bottom: 2px solid #e3350d;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+header h1 {
+  margin: 0;
+  color: #e3350d;
+}
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+.menu-button {
+  background: #e3350d;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  position: relative;
+}
+.menu-button:hover {
+  background: #b52a0a;
+}
+.dropdown {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  top: 100%;
+  left: 0;
+  min-width: 150px;
+  z-index: 10;
+}
+.dropdown a {
+  display: block;
+  padding: 0.5rem;
+  text-decoration: none;
+  color: #333;
+}
+.dropdown a:hover {
+  background: #f2f2f2;
+}
+.show {
+  display: block;
+}
+
+  body { font-family: Arial, sans-serif; margin: 2rem; background: #f8f9fa; color: #333; }
   h1 { color: #e3350d; }
   input { margin: 0.5rem 0; padding: 0.5rem; font-size: 1rem; }
   button { padding: 0.5rem 1rem; margin-top: 0.5rem; background: #e3350d; color: white; border: none; cursor: pointer; }
@@ -25,23 +76,28 @@
 <!-- En-tête commun -->
 <header>
   <h1>MyWebsite</h1>
-  <nav>
-    <button class="menu-button" onclick="toggleDropdown('homeDropdown')">Accueil ▾</button>
-    <div id="homeDropdown" class="dropdown">
-      <a href="index.html">Retour à l'accueil</a>
+  <div class="nav">
+    <div>
+      <button class="menu-button" onclick="toggleDropdown('accueilDropdown')">Accueil ▼</button>
+      <div id="accueilDropdown" class="dropdown">
+        <a href="index.html">Retour à l'accueil</a>
+      </div>
     </div>
-
-    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
-    <div id="applicationDropdown" class="dropdown">
-      <a href="PkmnFinder.html">Pokémon Finder</a>
+    <div>
+      <button class="menu-button" onclick="toggleDropdown('appDropdown')">Application ▼</button>
+      <div id="appDropdown" class="dropdown">
+        <a href="PkmnFinder.html">Pokémon Finder</a>
+      </div>
     </div>
-
-    <button class="menu-button" onclick="toggleDropdown('downloadDropdown')">Téléchargement ▾</button>
-    <div id="downloadDropdown" class="dropdown">
-      <a href="#">Bientôt disponible</a>
+    <div>
+      <button class="menu-button" onclick="toggleDropdown('downloadDropdown')">Téléchargement ▼</button>
+      <div id="downloadDropdown" class="dropdown">
+        <a href="#">Bientôt disponible</a>
+      </div>
     </div>
-  </nav>
+  </div>
 </header>
+
 <main>
   <h1 class="app-title">🔍 Trouver un Pokémon</h1>
   <p>
@@ -280,6 +336,7 @@ window.filterSearch = function() {
 
 
 </script>
+  
 <script>
 function toggleDropdown(id) {
   const dropdown = document.getElementById(id);
