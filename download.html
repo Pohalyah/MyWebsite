@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head> 
+<head>
   <meta charset="UTF-8">
   <title>Download - MyWebsite</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      background: #f8f8f9;
+      background: #f8f9fa;
       color: #333;
     }
+
     header {
       background: #e3350d;
       color: white;
@@ -58,10 +59,50 @@
     .show {
       display: block;
     }
+
     main {
       padding: 2rem;
-      text-align: center;
     }
+
+    /* Styles des cases de téléchargement */
+    .download-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 2rem;
+      justify-content: flex-start;
+    }
+
+    .download-card {
+      display: block;
+      width: 200px;
+      padding: 1rem;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      text-align: center;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .download-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .download-card h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+    }
+
+    .download-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
   </style>
 </head>
 <body>
@@ -75,13 +116,26 @@
       <div id="applicationDropdown" class="dropdown">
         <a href="PkmnFinder.html">Pokémon Finder</a>
       </div>
-
     </nav>
   </header>
 
   <main>
     <h2>Bientôt disponible !</h2>
-    <p>Les téléchargements seront disponibles ici.</p>
+    <p>Les téléchargements disponibles :</p>
+
+    <div class="download-grid">
+      <a href="https://github.com/Pohalyah/MyWebsite/releases/download/downloads/EggsDeletor.zip" class="download-card" download>
+        <h3>EggsDeletor</h3>
+        <p>test</p>
+      </a>
+
+      <!-- Exemple pour ajouter d'autres fichiers :
+      <a href="URL_DU_FICHIER" class="download-card" download>
+        <h3>NomDuFichier</h3>
+        <p>Description</p>
+      </a>
+      -->
+    </div>
   </main>
 
   <script>
