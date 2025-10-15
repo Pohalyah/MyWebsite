@@ -1,99 +1,107 @@
-<header>
-  <h1>MyWebsite - Téléchargement</h1>
-  <nav>
-    <a href="index.html" class="menu-button" style="text-decoration:none; color:white;">Accueil</a>
-
-    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
-    <div id="applicationDropdown" class="dropdown">
-      <a href="PkmnFinder.html">Pokémon Finder</a>
-    </div>
-
-    <!-- Si tu veux d'autres liens, ajoute ici -->
-  </nav>
-</header>
-
-<style>
-header {
-  background: #e3350d; /* rouge comme sur l'accueil */
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-.menu-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-}
-.dropdown {
-  display: none; /* caché par défaut */
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: white;
-  color: #333;
-  min-width: 150px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  border-radius: 4px;
-  z-index: 1000;
-}
-.dropdown a {
-  display: block;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: #333;
-}
-.dropdown a:hover {
-  background: #f1f1f1;
-}
-.show {
-  display: block;
-}
-</style>
-
+<!DOCTYPE html>
+<html lang="fr">
+<head> 
+  <meta charset="UTF-8">
+  <title>Download - MyWebsite</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f8f8f9;
+      color: #333;
+    }
+    header {
+      background: #e3350d;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    nav {
+      position: relative;
+    }
+    .menu-button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      color: #333;
+      min-width: 150px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      z-index: 1000;
+    }
+    .dropdown a {
+      display: block;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      color: #333;
+    }
+    .dropdown a:hover {
+      background: #f1f1f1;
+    }
+    .show {
+      display: block;
+    }
+    main {
+      padding: 2rem;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
-<header> 
-  <h1>MyWebsite - Téléchargement</h1>
-  <nav>
-    <a href="index.html" class="menu-button" style="text-decoration:none; color:white;">Accueil</a>
-    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
-    <div id="applicationDropdown" class="dropdown">
-      <a href="PkmnFinder.html">Pokémon Finder</a>
-    </div>
-  </nav>
-</header>
+  <header>
+    <h1>MyWebsite - Téléchargement</h1>
+    <nav>
+      <a href="index.html" class="menu-button" style="text-decoration:none; color:white;">Accueil</a>
 
-<main style="padding:2rem;">
-  <h2>Bientôt disponible !</h2>
-  <p>Les téléchargements seront disponibles ici.</p>
-</main>
-  
-<script>
-function toggleDropdown(id) {
-  const dropdowns = document.querySelectorAll('.dropdown');
-  dropdowns.forEach(dd => {
-    if (dd.id !== id) dd.classList.remove('show'); // fermer les autres
-  });
-  const dropdown = document.getElementById(id);
-  dropdown.classList.toggle('show'); // ouvrir/fermer celui-ci
-}
+      <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
+      <div id="applicationDropdown" class="dropdown">
+        <a href="PkmnFinder.html">Pokémon Finder</a>
+      </div>
 
-// Fermer le menu si clic en dehors
-window.onclick = function(event) {
-  if (!event.target.matches('.menu-button')) {
-    const dropdowns = document.querySelectorAll('.dropdown');
-    dropdowns.forEach(dd => dd.classList.remove('show'));
-  }
-}
-</script>
+    </nav>
+  </header>
 
+  <main>
+    <h2>Bientôt disponible !</h2>
+    <p>Les téléchargements seront disponibles ici.</p>
+  </main>
+
+  <script>
+    function toggleDropdown(id) {
+      const dropdowns = document.querySelectorAll('.dropdown');
+      dropdowns.forEach(dd => {
+        if (dd.id !== id) dd.classList.remove('show'); // fermer les autres
+      });
+      const dropdown = document.getElementById(id);
+      dropdown.classList.toggle('show'); // ouvrir/fermer celui-ci
+    }
+
+    // Fermer le menu si clic en dehors
+    window.onclick = function(event) {
+      if (!event.target.matches('.menu-button')) {
+        const dropdowns = document.querySelectorAll('.dropdown');
+        dropdowns.forEach(dd => dd.classList.remove('show'));
+      }
+    }
+  </script>
 
 </body>
 </html>
