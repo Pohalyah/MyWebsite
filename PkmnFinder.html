@@ -22,12 +22,40 @@
   </style>
 </head>
 <body>
-  <h1>🔍 Trouver un Pokémon</h1>
+<!-- En-tête commun -->
+<header>
+  <h1>MyWebsite</h1>
+  <nav>
+    <button class="menu-button" onclick="toggleDropdown('homeDropdown')">Accueil ▾</button>
+    <div id="homeDropdown" class="dropdown">
+      <a href="index.html">Retour à l'accueil</a>
+    </div>
 
+    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
+    <div id="applicationDropdown" class="dropdown">
+      <a href="PkmnFinder.html">Pokémon Finder</a>
+    </div>
+
+    <button class="menu-button" onclick="toggleDropdown('downloadDropdown')">Téléchargement ▾</button>
+    <div id="downloadDropdown" class="dropdown">
+      <a href="#">Bientôt disponible</a>
+    </div>
+  </nav>
+</header>
+<main>
+  <h1 class="app-title">🔍 Trouver un Pokémon</h1>
   <p>
     Tape un mot avec <strong>_</strong> pour les lettres inconnues.<br>
     Exemple : <code>pi__chu</code> → <em>pikachu</em>
   </p>
+
+  <input type="text" id="pattern" placeholder="ex: pi__chu" size="30">
+  <br>
+  <button onclick="filterPokemon()">Chercher</button>
+
+  <div class="results" id="results"></div>
+</main>
+
 
   <div>
   <label>
@@ -251,6 +279,17 @@ window.filterSearch = function() {
 };
 
 
+</script>
+<script>
+function toggleDropdown(id) {
+  const dropdown = document.getElementById(id);
+  dropdown.classList.toggle('show');
+}
+window.onclick = function(event) {
+  if (!event.target.matches('.menu-button')) {
+    document.querySelectorAll('.dropdown').forEach(dd => dd.classList.remove('show'));
+  }
+}
 </script>
 
 </body>
