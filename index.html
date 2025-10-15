@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>MyWebsite - Accueil</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #e3350d;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    nav {
+      position: relative;
+    }
+    .menu-button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      color: #333;
+      min-width: 150px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      z-index: 1000;
+    }
+    .dropdown a {
+      display: block;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      color: #333;
+    }
+    .dropdown a:hover {
+      background: #f1f1f1;
+    }
+    .show {
+      display: block;
+    }
+    main {
+      padding: 2rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>MyWebsite</h1>
+    <nav>
+      <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
+      <div id="applicationDropdown" class="dropdown">
+        <a href="PkmnFinder.html">Pokémon Finder</a>
+      </div>
+
+      <button class="menu-button" onclick="toggleDropdown('downloadDropdown')">Téléchargement ▾</button>
+      <div id="downloadDropdown" class="dropdown">
+        <a href="#">Bientôt disponible</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Bienvenue sur MyWebsite !</h2>
+    <p>Découvrez nos applications et téléchargez-les prochainement.</p>
+    <p>Pour commencer, cliquez sur "Application" dans le menu ci-dessus.</p>
+  </main>
+
+  <script>
+    function toggleDropdown(id) {
+      const dropdown = document.getElementById(id);
+      dropdown.classList.toggle('show');
+    }
+
+    // Fermer le menu si clic en dehors
+    window.onclick = function(event) {
+      if (!event.target.matches('.menu-button')) {
+        const dropdowns = document.querySelectorAll('.dropdown');
+        dropdowns.forEach(dd => dd.classList.remove('show'));
+      }
+    }
+  </script>
+
+</body>
+</html>
