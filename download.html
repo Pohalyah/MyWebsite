@@ -1,13 +1,61 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head> 
-  <meta charset="UTF-8">
-  <title>Download - MyWebsite</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f0f0f0; color: #333; }
-    header { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-    .menu-button { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; margin-left: 1rem; }
-  </style>
+<header>
+  <h1>MyWebsite - Téléchargement</h1>
+  <nav>
+    <a href="index.html" class="menu-button" style="text-decoration:none; color:white;">Accueil</a>
+
+    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
+    <div id="applicationDropdown" class="dropdown">
+      <a href="PkmnFinder.html">Pokémon Finder</a>
+    </div>
+
+    <!-- Si tu veux d'autres liens, ajoute ici -->
+  </nav>
+</header>
+
+<style>
+header {
+  background: #e3350d; /* rouge comme sur l'accueil */
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+.menu-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}
+.dropdown {
+  display: none; /* caché par défaut */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  color: #333;
+  min-width: 150px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 1000;
+}
+.dropdown a {
+  display: block;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: #333;
+}
+.dropdown a:hover {
+  background: #f1f1f1;
+}
+.show {
+  display: block;
+}
+</style>
+
 </head>
 <body>
 
@@ -45,6 +93,7 @@ window.onclick = function(event) {
   }
 }
 </script>
+
 
 </body>
 </html>
