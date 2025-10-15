@@ -22,6 +22,20 @@
   </style>
 </head>
 <body>
+  <header>
+  <h1>MyWebsite</h1>
+  <nav>
+    
+    <a href="index.html" class="menu-button" style="text-decoration:none; color:white;">Accueil</a>
+    <button class="menu-button" onclick="toggleDropdown('applicationDropdown')">Application ▾</button>
+    <div id="applicationDropdown" class="dropdown">
+      <a href="PkmnFinder.html">Pokémon Finder</a>
+    </div>
+    <a href="download.html" class="menu-button" style="text-decoration:none; color:white;">Téléchargement</a>
+
+  </nav>
+</header>
+
   <h1>🔍 Trouver un Pokémon</h1>
 
   <p>
@@ -252,6 +266,25 @@ window.filterSearch = function() {
 
 
 </script>
+<script>
+function toggleDropdown(id) {
+  const dropdowns = document.querySelectorAll('.dropdown');
+  dropdowns.forEach(dd => {
+    if (dd.id !== id) dd.classList.remove('show'); // fermer les autres
+  });
+  const dropdown = document.getElementById(id);
+  dropdown.classList.toggle('show'); // ouvrir/fermer celui-ci
+}
+
+// Fermer le menu si clic en dehors
+window.onclick = function(event) {
+  if (!event.target.matches('.menu-button')) {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dd => dd.classList.remove('show'));
+  }
+}
+</script>
+
 
 </body>
 </html>
