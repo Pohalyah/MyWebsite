@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Optimizer Metamorph IVs</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+input { width: 40px; margin-right: 5px; }
+button { margin-top: 10px; }
+table { border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #333; padding: 5px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Optimizer Metamorph IVs</h1>
+<p>Entrez vos métamorphs (jusqu'à 60) avec leurs 6 IVs (HP, Atk, Def, AtkSp, DefSp, Speed) :</p>
+
+<div id="metamorphInputs"></div>
+<button onclick="addMetamorph()">Ajouter un Metamorph</button>
+<button onclick="runOptimizer()">Lancer l'Optimizer</button>
+
+<div id="results"></div>
+
+<script>
+let metamorphs = [];
+
+function addMetamorph() {
+    if (metamorphs.length >= 60) return alert("Maximum 60 metamorphs");
+    const div = document.createElement('div');
+    div.innerHTML = `Metamorph ${metamorphs.length+1} : ` +
+        ['HP','Atk','Def','AtkSp','DefSp','Speed'].map(stat => `<input type="number" min="0" max="31" placeholder="${stat}">`).join('');
+    document.getElementById('metamorphInputs').appendChild(div);
+    metamorphs.push(div);
+}
+
+function runOptimizer() {
+    const data = metamorphs.map(div => {
+        const inputs = div.querySelectorAll('input');
+        return Array.from(inputs).map(i => parseInt(i.value)||0);
+    });
+
+    const couples = generateCouples(data);
+    const optimizedCouples = optimizeCouples(couples);
+    displayResults(optimizedCouples, data.length);
+}
+
+// Génère toutes les paires de métamorphs
+function generateCouples(data) {
+    let pairs = [];
+    for (let i=0; i<data.length; i++) {
+        for (let j=i+1; j<data.length; j++) {
+            pairs.push({p1:data[i], p2:data[j], i1:i, i2:j});
+        }
+    }
+    return pairs;
+}
+
+// Monte-Carlo robuste pour chaque couple et chaque combinaison d'objets
+function simulateEgg(p1, p2, item1, item2) {
+    // DK et Power rules
+    let ivs = [0,0,0,0,0,0];
+    let forced = [false,false,false,false,false,false];
+
+    if (item1==='DK') { // DK transmet 5 IVs aléatoires
+        let indices = shuffle([0,1,2,3,4,5]).slice(0,5);
+        for (let idx of indices) ivs[idx] = p1[idx]; 
+    }
+    if (item2==='DK') {
+        let indices = shuffle([0,1,2,3,4,5]).slice(0,5);
+        for (let idx of indices) if(!ivs[idx]) ivs[idx] = p2[idx];
+    }
+
+    if (item1.startsWith('Power')) {
+        let stat = powerStat(item1);
+        ivs[stat] = 31;
+        forced[stat] = true;
+    }
+    if (item2.startsWith('Power')) {
+        let stat = powerStat(item2);
+        if(forced[stat]) {
+            // Power + Power 50/50 pour IV forcée
+            ivs[stat] = Math.random()<0.5? p1[stat] : p2[stat];
+        } else {
+            ivs[stat] = 31;
+            forced[stat] = true;
+        }
+    }
+
+    // Compléter les IVs restantes aléatoirement depuis parents
+    for(let k=0;k<6;k++){
+        if(!ivs[k]) ivs[k] = Math.random()<0.5? p1[k] : p2[k];
+    }
+    return ivs;
+}
+
+// Détermine le stat de l'objet pouvoir
+function powerStat(item) {
+    const map = {'PowerHP':0,'PowerAtk':1,'PowerDef':2,'PowerSpA':3,'PowerSpD':4,'PowerSpe':5};
+    return map[item] || 0;
+}
+
+// Shuffle utile
+function shuffle(array) {
+    let arr = array.slice();
+    for (let i=arr.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+// Optimise tous les couples
+function optimizeCouples(couples) {
+    const results = [];
+    const items = ['NI','DK','PowerHP','PowerAtk','PowerDef','PowerSpA','PowerSpD','PowerSpe'];
+
+    for(let c of couples){
+        let bestScore = -1;
+        let bestItemCombo = ['NI','NI'];
+        for(let it1 of items){
+            for(let it2 of items){
+                if(it1==='DK' && it2==='DK') continue; // DK max 1 par couple
+                let score = 0;
+                const sims = 200; // Monte-Carlo robust
+                for(let s=0;s<sims;s++){
+                    const egg = simulateEgg(c.p1,c.p2,it1,it2);
+                    score += egg.filter(x=>x===31).length;
+                }
+                score = score/sims;
+                if(score>bestScore){
+                    bestScore=score;
+                    bestItemCombo=[it1,it2];
+                }
+            }
+        }
+        results.push({i1:c.i1,i2:c.i2,score:bestScore,items:bestItemCombo});
+    }
+
+    // Tri décroissant
+    return results.sort((a,b)=>b.score-a.score);
+}
+
+// Affichage final
+function displayResults(results,total) {
+    const used = new Set();
+    let html = '<h2>Couples optimisés</h2><table><tr><th>P1</th><th>P2</th><th>Objets</th><th>Score moyen IV 31</th></tr>';
+    for(let r of results){
+        if(used.has(r.i1) || used.has(r.i2)) continue;
+        used.add(r.i1); used.add(r.i2);
+        html += `<tr><td>${r.i1+1}</td><td>${r.i2+1}</td><td>${r.items.join(' + ')}</td><td>${r.score.toFixed(2)}</td></tr>`;
+    }
+    html += '</table>';
+
+    let alone = [];
+    for(let i=0;i<total;i++) if(!used.has(i)) alone.push(i+1);
+    html += '<h2>Métamorphs seuls</h2><p>'+alone.join(', ')+'</p>';
+
+    document.getElementById('results').innerHTML = html;
+}
+</script>
+
+</body>
+</html>
