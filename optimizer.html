@@ -690,7 +690,7 @@
                 return score;
             }
 
-            // STRATÉGIES OPTIMISÉES POUR LES MÉCANIQUES DU SERVEUR
+            // STRATÉGIES OPTIMISÉES - CORRIGÉES
             findOptimalStrategy(ditto1, ditto2) {
                 const stats = ['HP', 'Attaque', 'Defense', 'Attaque Spé.', 'Defense Spé.', 'Vitesse'];
                 
@@ -710,10 +710,10 @@
                 // Total des 31 disponibles (stats avec au moins un 31)
                 const total31 = [...new Set([...ditto131, ...ditto231])].length;
 
-                // STRATÉGIE 1: Destiny Knot + Power Item (TOUJOURS LA MEILLEURE QUAND POSSIBLE)
                 let bestStrategy = null;
-                
-                // Essayer toutes les combinaisons Power Item + Destiny Knot
+
+                // STRATÉGIE 1: Destiny Knot + Power Item (TOUJOURS PRIVILÉGIÉE)
+                // Cette stratégie donne le meilleur résultat : 1 IV garanti + 4 hérités + 1 aléatoire
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
@@ -727,7 +727,7 @@
                         item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                         item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                         expected31: expected,
-                        explanation: `Garantit le 31 en ${stats[exclusive]} + ${expectedInherited} autres IVs hérités + 1 aléatoire`,
+                        explanation: `Power Item garantit le 31 en ${stats[exclusive]} + Destiny Knot transmet ${expectedInherited} autres 31 + 1 aléatoire`,
                         score: expected
                     };
                     
@@ -736,21 +736,24 @@
                     }
                 }
 
-                // Si on n'a pas trouvé de stratégie Power Item + Destiny Knot, utiliser Destiny Knot seul
-                if (!bestStrategy) {
-                    const expected = Math.min(5, total31) + this.RANDOM_31_CHANCE;
-                    bestStrategy = {
-                        type: 'destinyknot_only',
-                        item1: 'destinyknot',
-                        item2: null,
-                        expected31: expected,
-                        explanation: 'Destiny Knot seul: ' + Math.min(5, total31) + ' IVs hérités + 1 aléatoire',
-                        score: expected
-                    };
+                // Si on a trouvé une stratégie DK + Power Item, on la retourne immédiatement
+                if (bestStrategy) {
+                    return bestStrategy;
                 }
 
-                // STRATÉGIE 2: Deux Power Items (MÉCANIQUE SPÉCIFIQUE DU SERVEUR)
-                // Seulement si c'est meilleur que Destiny Knot + Power Item
+                // STRATÉGIE 2: Destiny Knot seul (quand pas de stats exclusives)
+                const dkExpected = Math.min(5, total31) + this.RANDOM_31_CHANCE;
+                bestStrategy = {
+                    type: 'destinyknot_only',
+                    item1: 'destinyknot',
+                    item2: null,
+                    expected31: dkExpected,
+                    explanation: `Destiny Knot seul: ${Math.min(5, total31)} IVs hérités + 1 aléatoire`,
+                    score: dkExpected
+                };
+
+                // STRATÉGIE 3: Deux Power Items (MÉCANIQUE SPÉCIFIQUE DU SERVEUR)
+                // Seulement si meilleur que Destiny Knot seul
                 if (exclusive31_ditto1.length >= 1 && exclusive31_ditto2.length >= 1) {
                     const stat1 = exclusive31_ditto1[0];
                     const stat2 = exclusive31_ditto2[0];
@@ -772,8 +775,7 @@
                     }
                 }
 
-                // STRATÉGIE 3: Power Item seul (SEULEMENT SI PAS MIEUX)
-                // Cette stratégie est rarement optimale, donc on la considère en dernier
+                // STRATÉGIE 4: Power Item seul (TRÈS RARE - seulement si vraiment meilleur)
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
@@ -781,8 +783,8 @@
                     const other31 = total31 - 1;
                     const expected = 1 + Math.min(2, other31) + (3 * this.RANDOM_31_CHANCE);
                     
-                    // Seulement si c'est meilleur que les stratégies précédentes
-                    if (expected > bestStrategy.expected31) {
+                    // Seulement si significativement meilleur
+                    if (expected > bestStrategy.expected31 + 0.5) { // Seuil plus élevé
                         bestStrategy = {
                             type: 'poweritem_only',
                             item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : null,
@@ -794,7 +796,7 @@
                     }
                 }
 
-                // STRATÉGIE 4: Aucun objet (pour Métamorph sans 31)
+                // STRATÉGIE 5: Aucun objet (pour Métamorph sans 31)
                 if (!ditto1.has31 && !ditto2.has31) {
                     // 3 IVs hérités + 3 aléatoires
                     const expectedRandom = Math.min(3, total31) + (3 * this.RANDOM_31_CHANCE);
