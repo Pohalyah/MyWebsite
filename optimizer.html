@@ -462,19 +462,73 @@
             font-size: 0.8em;
             color: #856404;
         }
+
+        .server-mechanics {
+            background: #e8f4fd;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .server-mechanics h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .mechanics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .mechanic-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .mechanic-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🔬 Métamorph Optimizer</h1>
-            <p class="subtitle">Tous les Métamorph comptent - Même sans 31 ils peuvent être utiles</p>
+            <p class="subtitle">Optimisé pour les mécaniques spécifiques de votre serveur Cobblemon</p>
         </header>
 
         <div class="main-content">
             <div class="input-section">
                 <h2>📊 Entrez vos Métamorph</h2>
                 
+                <div class="server-mechanics">
+                    <h3>🎯 Mécaniques Spécifiques du Serveur</h3>
+                    <div class="mechanics-grid">
+                        <div class="mechanic-item">
+                            <h4>Destiny Knot</h4>
+                            <p>5 IVs hérités aléatoirement des parents</p>
+                        </div>
+                        <div class="mechanic-item">
+                            <h4>Power Item</h4>
+                            <p>Garantit l'IV correspondant du parent qui le tient</p>
+                        </div>
+                        <div class="mechanic-item">
+                            <h4>2 Power Items</h4>
+                            <p>50% de chance qu'un seul s'active (aléatoire)</p>
+                        </div>
+                        <div class="mechanic-item">
+                            <h4>IVs Aléatoires</h4>
+                            <p>1/32 chance d'être 31</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="instructions">
                     <h3>Nouvelle philosophie : Tous les Métamorph comptent !</h3>
                     <ul>
@@ -533,7 +587,7 @@
         </div>
 
         <footer class="footer">
-            <p>Optimiseur Cobblemon - Tous les Métamorph sont comptabilisés, même sans 31</p>
+            <p>Optimiseur Cobblemon - Optimisé pour les mécaniques spécifiques de votre serveur</p>
         </footer>
     </div>
 
@@ -544,6 +598,7 @@
                 this.maxDittos = 60;
                 this.maxUsedDittos = 30;
                 this.maxPairs = 15;
+                this.RANDOM_31_CHANCE = 1/32;
                 this.init();
             }
 
@@ -616,7 +671,7 @@
                         validDittos.push({
                             ivs: this.dittos[i],
                             binaryIVs: binaryIVs,
-                            originalIVs: this.dittos[i],
+                            originalIVs: [...this.dittos[i]],
                             binaryString: binaryString,
                             index: i,
                             score: this.calculateIndividualScore(this.dittos[i]),
@@ -635,19 +690,17 @@
                 return score;
             }
 
-            // STRATÉGIES BASÉES SUR TOUS LES MÉTAMORPH
+            // STRATÉGIES OPTIMISÉES POUR LES MÉCANIQUES DU SERVEUR
             findOptimalStrategy(ditto1, ditto2) {
                 const stats = ['HP', 'Attaque', 'Defense', 'Attaque Spé.', 'Defense Spé.', 'Vitesse'];
                 
                 // Identifier les 31
                 const ditto131 = [];
                 const ditto231 = [];
-                const shared31 = []; // Stats où les deux ont 31
                 
                 for (let i = 0; i < 6; i++) {
                     if (ditto1.ivs[i] === 31) ditto131.push(i);
                     if (ditto2.ivs[i] === 31) ditto231.push(i);
-                    if (ditto1.ivs[i] === 31 && ditto2.ivs[i] === 31) shared31.push(i);
                 }
 
                 // Stats exclusives (31 sur un seul parent)
@@ -657,27 +710,22 @@
                 // Total des 31 disponibles (stats avec au moins un 31)
                 const total31 = [...new Set([...ditto131, ...ditto231])].length;
 
-                // Calculer la qualité moyenne des IVs pour les stats sans 31
-                const averageIV1 = ditto1.ivs.reduce((sum, iv) => sum + iv, 0) / 6;
-                const averageIV2 = ditto2.ivs.reduce((sum, iv) => sum + iv, 0) / 6;
-
                 let bestStrategy = {
                     type: 'destinyknot_only',
                     item1: 'destinyknot',
                     item2: null,
-                    expected31: Math.min(5, total31),
-                    explanation: 'Destiny Knot seul: 5 IVs hérités (parmi les ' + total31 + ' stats avec 31 disponibles)',
-                    score: Math.min(5, total31)
+                    expected31: Math.min(5, total31) + this.RANDOM_31_CHANCE,
+                    explanation: 'Destiny Knot seul: 5 IVs hérités (parmi les ' + total31 + ' stats avec 31 disponibles) + 1 aléatoire',
+                    score: Math.min(5, total31) + this.RANDOM_31_CHANCE
                 };
 
                 // STRATÉGIE 1: Destiny Knot + Power Item
-                // Power Item garantit 1 IV + DK transmet 4 autres = 5 hérités + 1 aléatoire
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
                     // Avec DK + Power Item: 1 garanti + 4 hérités parmi les autres stats avec 31
                     const other31 = total31 - 1; // On exclut la stat garantie
-                    const expected = 1 + Math.min(4, other31);
+                    const expected = 1 + Math.min(4, other31) + this.RANDOM_31_CHANCE;
                     
                     if (expected > bestStrategy.expected31) {
                         bestStrategy = {
@@ -685,41 +733,44 @@
                             item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                             item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                             expected31: expected,
-                            explanation: `Garantit le 31 en ${stats[exclusive]} + 4 autres IVs hérités`,
+                            explanation: `Garantit le 31 en ${stats[exclusive]} + 4 autres IVs hérités + 1 aléatoire`,
                             score: expected
                         };
                     }
                 }
 
-                // STRATÉGIE 2: Deux Power Items
-                // 1 Power Item s'active (50% chance) + 2 IVs hérités + 3 aléatoires
+                // STRATÉGIE 2: Deux Power Items (MÉCANIQUE SPÉCIFIQUE DU SERVEUR)
                 if (exclusive31_ditto1.length >= 1 && exclusive31_ditto2.length >= 1) {
                     const stat1 = exclusive31_ditto1[0];
                     const stat2 = exclusive31_ditto2[0];
                     
-                    // 50% chance pour chaque Power Item + 2 hérités parmi les autres stats avec 31
-                    const other31 = total31 - 2; // On exclut les deux stats des Power Items
-                    const expected = 1 + Math.min(2, other31); // 1 en moyenne + 2 hérités
+                    // Mécanique spécifique: 50% chance pour chaque Power Item
+                    // Si un Power Item s'active, il lock 1 IV + 4 autres hérités avec Destiny Knot
+                    const expectedWhenStat1 = 1 + Math.min(4, total31 - 1) + this.RANDOM_31_CHANCE;
+                    const expectedWhenStat2 = 1 + Math.min(4, total31 - 1) + this.RANDOM_31_CHANCE;
+                    
+                    // Moyenne pondérée: 50% chance pour chaque scénario
+                    const expected = 0.5 * expectedWhenStat1 + 0.5 * expectedWhenStat2;
                     
                     if (expected > bestStrategy.expected31) {
                         bestStrategy = {
-                            type: 'two_poweritems',
+                            type: 'two_poweritems_server',
                             item1: this.getPowerItemForStat(stat1),
                             item2: this.getPowerItemForStat(stat2),
                             expected31: expected,
-                            explanation: `50% chance de garantir le 31 en ${stats[stat1]} ou ${stats[stat2]} + 2 IVs hérités`,
+                            explanation: `50% chance de garantir ${stats[stat1]} OU ${stats[stat2]} + 4 autres IVs hérités + 1 aléatoire`,
                             score: expected
                         };
                     }
                 }
 
                 // STRATÉGIE 3: Power Item seul
-                // 1 IV garanti + 2 IVs hérités + 3 aléatoires
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
+                    // Power Item seul: 1 garanti + 2 hérités + 3 aléatoires
                     const other31 = total31 - 1;
-                    const expected = 1 + Math.min(2, other31);
+                    const expected = 1 + Math.min(2, other31) + (3 * this.RANDOM_31_CHANCE);
                     
                     if (expected > bestStrategy.expected31) {
                         bestStrategy = {
@@ -727,16 +778,16 @@
                             item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : null,
                             item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : null,
                             expected31: expected,
-                            explanation: `Garantit le 31 en ${stats[exclusive]} + 2 IVs hérités`,
+                            explanation: `Garantit le 31 en ${stats[exclusive]} + 2 IVs hérités + 3 aléatoires`,
                             score: expected
                         };
                     }
                 }
 
                 // STRATÉGIE 4: Aucun objet (pour Métamorph sans 31)
-                // 3 IVs hérités + 3 aléatoires
                 if (!ditto1.has31 && !ditto2.has31) {
-                    const expectedRandom = 3 * (1/32); // 3 IVs aléatoires avec chance 1/32 d'être 31
+                    // 3 IVs hérités + 3 aléatoires
+                    const expectedRandom = Math.min(3, total31) + (3 * this.RANDOM_31_CHANCE);
                     bestStrategy = {
                         type: 'no_items',
                         item1: null,
@@ -853,7 +904,7 @@
                 container.innerHTML = `
                     <div class="loading">
                         <div>🔍 Analyse des Métamorph...</div>
-                        <div>Recherche des meilleurs couples (tous les Métamorph sont considérés)</div>
+                        <div>Optimisation basée sur les mécaniques spécifiques du serveur</div>
                     </div>
                 `;
             }
@@ -941,7 +992,7 @@
 
                 let itemsHtml = `<div class="items-summary">
                     <h4>🎁 Objets recommandés</h4>
-                    <p>Distribution optimale pour maximiser les chances d'obtenir des 31 :</p>
+                    <p>Distribution optimale basée sur les mécaniques du serveur :</p>
                     <div class="items-grid">`;
 
                 Object.keys(itemUsage).forEach(item => {
@@ -962,12 +1013,12 @@
             createPairCard(pair, pairNumber) {
                 const itemNames = {
                     'destinyknot': 'Destiny Knot',
-                    'powerweight': 'Poids Pouvoir',
-                    'powerbracer': 'Poignet Pouvoir',
-                    'powerbelt': 'Ceinture Pouvoir',
-                    'powerlens': 'Lentille Pouvoir',
-                    'powerband': 'Bandeau Pouvoir',
-                    'poweranklet': 'Guêtre Pouvoir',
+                    'powerweight': 'Poids Pouvoir (HP)',
+                    'powerbracer': 'Poignet Pouvoir (Attaque)',
+                    'powerbelt': 'Ceinture Pouvoir (Défense)',
+                    'powerlens': 'Lentille Pouvoir (Attaque Spé.)',
+                    'powerband': 'Bandeau Pouvoir (Défense Spé.)',
+                    'poweranklet': 'Guêtre Pouvoir (Vitesse)',
                     '': 'Aucun'
                 };
 
@@ -992,15 +1043,26 @@
                                 <span class="item-display">${itemNames[pair.ditto2.item] || 'Aucun'}</span>
                             </div>
                             <div class="strategy-info">
-                                <strong>${pair.strategy.type.replace(/_/g, ' ').toUpperCase()}</strong><br>
+                                <strong>${this.formatStrategyType(pair.strategy.type)}</strong><br>
                                 ${pair.strategy.explanation}
                                 <div class="probability-info">
-                                    Tous les Métamorph sont considérés dans l'optimisation
+                                    Optimisé pour les mécaniques spécifiques du serveur
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
+            }
+
+            formatStrategyType(type) {
+                const types = {
+                    'destinyknot_only': 'DESTINY KNOT SEUL',
+                    'destinyknot_poweritem': 'DESTINY KNOT + POWER ITEM',
+                    'two_poweritems_server': 'DEUX POWER ITEMS (MÉCANIQUE SERVEUR)',
+                    'poweritem_only': 'POWER ITEM SEUL',
+                    'no_items': 'AUCUN OBJET'
+                };
+                return types[type] || type.toUpperCase();
             }
 
             createParentCard(title, ditto) {
