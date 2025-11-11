@@ -407,6 +407,15 @@
             margin-bottom: 5px;
             color: #2c3e50;
         }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -477,20 +486,9 @@
         class CobblemonOptimizer {
             constructor() {
                 this.dittos = [];
-                this.maxDittos = 60; // Maximum qu'on peut entrer
-                // Objets disponibles (15 exemplaires de chaque)
-                this.availableItems = {
-                    'destinyknot': 15,
-                    'powerweight': 15,    // HP
-                    'powerbracer': 15,    // Attaque
-                    'powerbelt': 15,      // Défense
-                    'powerlens': 15,      // Attaque Spéciale
-                    'powerband': 15,      // Défense Spéciale
-                    'poweranklet': 15     // Vitesse
-                };
-                
-                this.maxUsedDittos = 30; // Maximum utilisés dans l'optimisation
-                this.maxPairs = 15; // Maximum de couples
+                this.maxDittos = 60;
+                this.maxUsedDittos = 30;
+                this.maxPairs = 15;
                 this.init();
             }
 
@@ -551,43 +549,48 @@
             }
 
             getAllDittos() {
-                return this.dittos
-                    .map((ditto, index) => ditto ? { 
-                        ivs: ditto, 
-                        index,
-                        score: this.calculateIndividualScore(ditto)
-                    } : null)
-                    .filter(d => d && d.ivs.some(iv => iv > 0));
+                const validDittos = [];
+                
+                for (let i = 0; i < this.dittos.length; i++) {
+                    if (this.dittos[i] && this.dittos[i].some(iv => iv > 0)) {
+                        validDittos.push({
+                            ivs: this.dittos[i],
+                            index: i,
+                            score: this.calculateIndividualScore(this.dittos[i])
+                        });
+                    }
+                }
+                
+                return validDittos;
             }
 
             calculateIndividualScore(ditto) {
-                // Score basé sur la somme des IVs + bonus pour les 31
-                let score = ditto.ivs.reduce((sum, iv) => sum + iv, 0);
-                score += ditto.ivs.filter(iv => iv === 31).length * 10; // Bonus pour chaque 31
+                if (!ditto) return 0;
+                
+                let score = 0;
+                for (let i = 0; i < 6; i++) {
+                    score += ditto[i] || 0;
+                    if (ditto[i] === 31) score += 10;
+                }
                 return score;
             }
 
-            // Règles de reproduction spécifiques à Cobblemon
             calculateInheritance(ditto1, ditto2, item1, item2) {
-                let inheritedStats = 3; // Par défaut: 3 IVs hérités
+                let inheritedStats = 3;
                 let guaranteedStat = -1;
                 
-                // Appliquer les règles d'objets
                 if (item1 === 'destinyknot' || item2 === 'destinyknot') {
                     inheritedStats = 5;
                 }
                 
-                // Gestion des Power Items
                 const powerItems = [];
-                if (item1 && item1.startsWith('power')) powerItems.push({ item: item1, ditto: ditto1 });
-                if (item2 && item2.startsWith('power')) powerItems.push({ item: item2, ditto: ditto2 });
+                if (item1 && item1.startsWith('power')) powerItems.push(item1);
+                if (item2 && item2.startsWith('power')) powerItems.push(item2);
                 
                 if (powerItems.length === 1) {
-                    // Un seul Power Item: stat garantie
-                    guaranteedStat = this.getPowerItemStat(powerItems[0].item);
+                    guaranteedStat = this.getPowerItemStat(powerItems[0]);
                 } else if (powerItems.length === 2) {
-                    // Deux Power Items: 50% de chance pour chaque
-                    guaranteedStat = this.getPowerItemStat(Math.random() < 0.5 ? powerItems[0].item : powerItems[1].item);
+                    guaranteedStat = this.getPowerItemStat(Math.random() < 0.5 ? powerItems[0] : powerItems[1]);
                 }
                 
                 return { inheritedStats, guaranteedStat };
@@ -595,14 +598,14 @@
 
             getPowerItemStat(item) {
                 const powerMap = {
-                    'powerweight': 0,    // HP
-                    'powerbracer': 1,    // Attaque
-                    'powerbelt': 2,      // Défense
-                    'powerlens': 3,      // Attaque Spéciale
-                    'powerband': 4,      // Défense Spéciale
-                    'poweranklet': 5     // Vitesse
+                    'powerweight': 0,
+                    'powerbracer': 1,
+                    'powerbelt': 2,
+                    'powerlens': 3,
+                    'powerband': 4,
+                    'poweranklet': 5
                 };
-                return powerMap[item] !== undefined ? powerMap[item] : -1;
+                return powerMap[item] || -1;
             }
 
             calculatePairScore(ditto1, ditto2, item1, item2) {
@@ -616,17 +619,14 @@
                     let expectedIV;
                     
                     if (i === inheritance.guaranteedStat) {
-                        // Stat garantie par Power Item
-                        expectedIV = Math.max(ditto1[i], ditto2[i]);
+                        expectedIV = Math.max(ditto1[i] || 0, ditto2[i] || 0);
                     } else if (inheritance.inheritedStats > 0) {
-                        // Stat pouvant être héritée
-                        const maxIV = Math.max(ditto1[i], ditto2[i]);
+                        const maxIV = Math.max(ditto1[i] || 0, ditto2[i] || 0);
                         const inheritanceChance = inheritance.inheritedStats / (inheritance.guaranteedStat !== -1 ? 5 : 6);
-                        const randomIV = 15.5; // Espérance d'IV aléatoire
+                        const randomIV = 15.5;
                         
                         expectedIV = maxIV * inheritanceChance + randomIV * (1 - inheritanceChance);
                     } else {
-                        // Stat totalement aléatoire
                         expectedIV = 15.5;
                     }
                     
@@ -637,7 +637,13 @@
                 }
                 
                 // Bonus pour la complémentarité
-                const complementaryBonus = this.calculateComplementaryBonus(ditto1, ditto2);
+                let complementaryBonus = 0;
+                for (let i = 0; i < 6; i++) {
+                    if (ditto1[i] === 31 && (ditto2[i] || 0) < 20) complementaryBonus += 8;
+                    else if (ditto2[i] === 31 && (ditto1[i] || 0) < 20) complementaryBonus += 8;
+                    else if (ditto1[i] === 31 && ditto2[i] === 31) complementaryBonus += 15;
+                }
+                
                 score += complementaryBonus;
                 
                 return {
@@ -650,18 +656,6 @@
                 };
             }
 
-            calculateComplementaryBonus(ditto1, ditto2) {
-                let bonus = 0;
-                
-                for (let i = 0; i < 6; i++) {
-                    if (ditto1[i] === 31 && ditto2[i] < 20) bonus += 8;
-                    else if (ditto2[i] === 31 && ditto1[i] < 20) bonus += 8;
-                    else if (ditto1[i] === 31 && ditto2[i] === 31) bonus += 15;
-                }
-                
-                return bonus;
-            }
-
             findOptimalItems(ditto1, ditto2) {
                 const items = [null, 'destinyknot', 'powerweight', 'powerbracer', 'powerbelt', 'powerlens', 'powerband', 'poweranklet'];
                 let bestScore = -1;
@@ -669,10 +663,14 @@
                 
                 for (const item1 of items) {
                     for (const item2 of items) {
-                        const scoreInfo = this.calculatePairScore(ditto1.ivs, ditto2.ivs, item1, item2);
-                        if (scoreInfo.totalScore > bestScore) {
-                            bestScore = scoreInfo.totalScore;
-                            bestItems = { item1, item2 };
+                        try {
+                            const scoreInfo = this.calculatePairScore(ditto1.ivs, ditto2.ivs, item1, item2);
+                            if (scoreInfo.totalScore > bestScore) {
+                                bestScore = scoreInfo.totalScore;
+                                bestItems = { item1, item2 };
+                            }
+                        } catch (e) {
+                            console.error("Erreur dans calculatePairScore:", e);
                         }
                     }
                 }
@@ -681,34 +679,50 @@
             }
 
             optimizePairs() {
-                let allDittos = this.getAllDittos();
-                const totalDittos = allDittos.length;
-                
-                if (totalDittos < 2) {
-                    this.showResults([], [], totalDittos);
-                    alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs !');
-                    return;
-                }
-
-                this.showLoading();
-
-                setTimeout(() => {
-                    // Sélectionner les meilleurs Métamorph (max 30)
-                    let selectedDittos = allDittos;
-                    if (totalDittos > this.maxUsedDittos) {
-                        selectedDittos = allDittos
-                            .sort((a, b) => b.score - a.score)
-                            .slice(0, this.maxUsedDittos);
+                try {
+                    console.log("Début de l'optimisation...");
+                    
+                    const allDittos = this.getAllDittos();
+                    const totalDittos = allDittos.length;
+                    
+                    console.log(`Métamorph valides: ${totalDittos}`);
+                    
+                    if (totalDittos < 2) {
+                        this.showResults([], [], totalDittos);
+                        alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs !');
+                        return;
                     }
 
-                    const usedIndices = new Set(selectedDittos.map(d => d.index));
-                    const unusedDittos = allDittos.filter(d => !usedIndices.has(d.index));
+                    this.showLoading();
 
-                    // Réinitialiser les compteurs d'objets
-                    // Trouver les meilleurs couples avec attribution automatique des objets
-                    const pairs = this.findBestPairsWithItems(selectedDittos);
-                    this.showResults(pairs, unusedDittos, selectedDittos.length);
-                }, 100);
+                    // Utiliser setTimeout pour permettre à l'interface de se mettre à jour
+                    setTimeout(() => {
+                        try {
+                            let selectedDittos = allDittos;
+                            if (totalDittos > this.maxUsedDittos) {
+                                selectedDittos = allDittos
+                                    .sort((a, b) => b.score - a.score)
+                                    .slice(0, this.maxUsedDittos);
+                            }
+
+                            console.log(`Métamorph sélectionnés: ${selectedDittos.length}`);
+
+                            const usedIndices = new Set(selectedDittos.map(d => d.index));
+                            const unusedDittos = allDittos.filter(d => !usedIndices.has(d.index));
+
+                            const pairs = this.findBestPairsWithItems(selectedDittos);
+                            console.log(`Couples formés: ${pairs.length}`);
+                            
+                            this.showResults(pairs, unusedDittos, selectedDittos.length);
+                        } catch (e) {
+                            console.error("Erreur dans l'optimisation:", e);
+                            this.showError("Erreur lors de l'optimisation: " + e.message);
+                        }
+                    }, 100);
+                } catch (e) {
+                    console.error("Erreur générale:", e);
+                    this.showError("Erreur générale: " + e.message);
+                }
             }
 
             findBestPairsWithItems(dittos) {
@@ -716,13 +730,13 @@
                 const usedIndices = new Set();
                 const allPairs = [];
                 
-                // Générer tous les couples possibles
+                console.log("Génération des couples...");
+                
                 for (let i = 0; i < dittos.length; i++) {
                     for (let j = i + 1; j < dittos.length; j++) {
                         const ditto1 = dittos[i];
                         const ditto2 = dittos[j];
                         
-                        // Trouver les objets optimaux pour ce couple
                         const items = this.findOptimalItems(ditto1, ditto2);
                         
                         const scoreInfo = this.calculatePairScore(
@@ -741,10 +755,10 @@
                     }
                 }
                 
-                // Trier par score
+                console.log(`Couples générés: ${allPairs.length}`);
+                
                 allPairs.sort((a, b) => b.score - a.score);
                 
-                // Sélectionner les meilleurs couples sans répétition
                 for (const pair of allPairs) {
                     if (pairs.length >= this.maxPairs) break;
                     
@@ -768,6 +782,16 @@
                 `;
             }
 
+            showError(message) {
+                const container = document.getElementById('resultsContainer');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>❌ Erreur</strong><br>
+                        ${message}
+                    </div>
+                `;
+            }
+
             showResults(pairs, unusedDittos, usedCount) {
                 const container = document.getElementById('resultsContainer');
                 const totalDittos = this.getAllDittos().length;
@@ -786,7 +810,6 @@
                 
                 let html = '';
                 
-                // Information sur la sélection
                 if (totalDittos > this.maxUsedDittos) {
                     html += `
                         <div class="selection-info">
@@ -804,10 +827,8 @@
                     html += this.createPairCard(pair, index + 1);
                 });
 
-                // Résumé des objets attribués
                 html += this.createItemsSummary(pairs);
                 
-                // Afficher les Métamorph non utilisés
                 if (unusedDittos.length > 0) {
                     html += `<div class="unused-ditto">
                         <h4>📦 Métamorph non utilisés (${unusedDittos.length})</h4>
@@ -833,7 +854,6 @@
                     '': 'Aucun'
                 };
 
-                // Compter l'utilisation des objets
                 const itemUsage = {};
                 pairs.forEach(pair => {
                     [pair.ditto1, pair.ditto2].forEach(ditto => {
@@ -845,17 +865,15 @@
 
                 let itemsHtml = `<div class="items-summary">
                     <h4>🎁 Objets recommandés</h4>
-                    <p>Distribution automatique des objets pour les 30 Métamorph sélectionnés :</p>
+                    <p>Distribution automatique des objets pour les ${pairs.length * 2} Métamorph utilisés :</p>
                     <div class="items-grid">`;
 
-                // Afficher les objets utilisés
                 Object.keys(itemUsage).forEach(item => {
                     if (itemUsage[item] > 0) {
                         itemsHtml += `
                             <div class="item-assignment">
                                 <h5>${itemNames[item]}</h5>
                                 <div>Utilisé: ${itemUsage[item]} fois</div>
-                                <div>Disponible: ${this.availableItems[item]} exemplaires</div>
                             </div>
                         `;
                     }
@@ -968,21 +986,23 @@
             }
 
             loadFromStorage() {
-                const savedDittos = localStorage.getItem('cobblemonOptimizer_dittos');
-                
-                if (savedDittos) this.dittos = JSON.parse(savedDittos);
-                
-                // Mettre à jour les inputs
-                this.dittos.forEach((ditto, dittoIndex) => {
-                    if (ditto) {
-                        ditto.forEach((iv, statIndex) => {
-                            const input = document.querySelector(
-                                `input[data-ditto="${dittoIndex}"][data-stat="${statIndex}"]`
-                            );
-                            if (input) input.value = iv;
-                        });
+                try {
+                    const savedDittos = localStorage.getItem('cobblemonOptimizer_dittos');
+                    if (savedDittos) {
+                        this.dittos = JSON.parse(savedDittos);
+                        
+                        for (let i = 0; i < this.dittos.length; i++) {
+                            if (this.dittos[i]) {
+                                for (let j = 0; j < 6; j++) {
+                                    const input = document.querySelector(`input[data-ditto="${i}"][data-stat="${j}"]`);
+                                    if (input) input.value = this.dittos[i][j] || 0;
+                                }
+                            }
+                        }
                     }
-                });
+                } catch (e) {
+                    console.error("Erreur lors du chargement:", e);
+                }
                 
                 this.updateDisplay();
             }
