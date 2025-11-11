@@ -115,6 +115,13 @@
             transform: scale(1.2);
         }
 
+        .ditto-counter {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
         .ditto-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -399,6 +406,29 @@
         .advanced-controls.hidden {
             display: none;
         }
+
+        .selection-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            color: #155724;
+        }
+
+        .unused-ditto {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #721c24;
+        }
+
+        .unused-ditto h4 {
+            margin-bottom: 10px;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -417,9 +447,14 @@
                     <ul>
                         <li>Remplissez les IVs (0-31) pour chaque Métamorph</li>
                         <li>Sélectionnez les objets tenus (optionnel)</li>
-                        <li>L'optimiseur trouvera les meilleurs couples avec objets optimaux</li>
-                        <li>Maximum 60 Métamorph analysés</li>
+                        <li>L'optimiseur sélectionnera les 30 meilleurs Métamorph maximum</li>
+                        <li>Maximum 15 couples formés (30 Métamorph utilisés)</li>
+                        <li>Les Métamorph non sélectionnés ne seront pas utilisés</li>
                     </ul>
+                </div>
+
+                <div class="ditto-counter">
+                    Métamorph valides: <span id="validDittosCount">0</span> / 30 maximum utilisés
                 </div>
 
                 <div class="config-section">
@@ -448,7 +483,7 @@
                 <div class="optimization-info" id="optimizationInfo">
                     <div class="info-item">
                         <span class="info-label">Métamorph valides:</span>
-                        <span id="validDittosCount">0</span>
+                        <span id="validDittosCountResult">0</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Mode:</span>
@@ -473,8 +508,9 @@
             constructor() {
                 this.dittos = [];
                 this.items = [];
-                this.maxDittos = 60;
-                this.maxPairs = 15;
+                this.maxDittos = 60; // Maximum qu'on peut entrer
+                this.maxUsedDittos = 30; // Maximum utilisés dans l'optimisation
+                this.maxPairs = 15; // Maximum de couples
                 this.advancedMode = false;
                 this.init();
             }
@@ -563,8 +599,20 @@
 
             getAllDittos() {
                 return this.dittos
-                    .map((ditto, index) => ditto ? { ivs: ditto, item: this.items[index] || null, index } : null)
+                    .map((ditto, index) => ditto ? { 
+                        ivs: ditto, 
+                        item: this.items[index] || null, 
+                        index,
+                        score: this.calculateIndividualScore(ditto)
+                    } : null)
                     .filter(d => d && d.ivs.some(iv => iv > 0));
+            }
+
+            calculateIndividualScore(ditto) {
+                // Score basé sur la somme des IVs + bonus pour les 31
+                let score = ditto.ivs.reduce((sum, iv) => sum + iv, 0);
+                score += ditto.ivs.filter(iv => iv === 31).length * 10; // Bonus pour chaque 31
+                return score;
             }
 
             // Règles de reproduction spécifiques à Cobblemon
@@ -681,10 +729,11 @@
             }
 
             optimizePairs() {
-                const validDittos = this.getAllDittos();
+                let allDittos = this.getAllDittos();
+                const totalDittos = allDittos.length;
                 
-                if (validDittos.length < 2) {
-                    this.showResults([]);
+                if (totalDittos < 2) {
+                    this.showResults([], [], totalDittos);
                     alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs !');
                     return;
                 }
@@ -692,8 +741,19 @@
                 this.showLoading();
 
                 setTimeout(() => {
-                    const pairs = this.findBestPairs(validDittos);
-                    this.showResults(pairs);
+                    // Sélectionner les meilleurs Métamorph (max 30)
+                    let selectedDittos = allDittos;
+                    if (totalDittos > this.maxUsedDittos) {
+                        selectedDittos = allDittos
+                            .sort((a, b) => b.score - a.score)
+                            .slice(0, this.maxUsedDittos);
+                    }
+
+                    const usedIndices = new Set(selectedDittos.map(d => d.index));
+                    const unusedDittos = allDittos.filter(d => !usedIndices.has(d.index));
+
+                    const pairs = this.findBestPairs(selectedDittos);
+                    this.showResults(pairs, unusedDittos, selectedDittos.length);
                 }, 100);
             }
 
@@ -760,8 +820,9 @@
                 `;
             }
 
-            showResults(pairs) {
+            showResults(pairs, unusedDittos, usedCount) {
                 const container = document.getElementById('resultsContainer');
+                const totalDittos = this.getAllDittos().length;
                 
                 if (pairs.length === 0) {
                     container.innerHTML = `
@@ -773,13 +834,36 @@
                     return;
                 }
                 
-                let html = `<div class="results-summary">
+                let html = '';
+                
+                // Information sur la sélection
+                if (totalDittos > this.maxUsedDittos) {
+                    html += `
+                        <div class="selection-info">
+                            <strong>ℹ️ Sélection automatique</strong><br>
+                            Sur ${totalDittos} Métamorph valides, les ${usedCount} meilleurs ont été sélectionnés pour l'optimisation.
+                        </div>
+                    `;
+                }
+                
+                html += `<div class="results-summary">
                     <h3>🎯 ${pairs.length} meilleur(s) couple(s) trouvé(s)</h3>
                 </div>`;
                 
                 pairs.forEach((pair, index) => {
                     html += this.createPairCard(pair, index + 1);
                 });
+                
+                // Afficher les Métamorph non utilisés
+                if (unusedDittos.length > 0) {
+                    html += `<div class="unused-ditto">
+                        <h4>📦 Métamorph non utilisés (${unusedDittos.length})</h4>
+                        <p>Ces Métamorph n'ont pas été sélectionnés pour former des couples :</p>
+                        <div style="margin-top: 10px; font-size: 0.9em;">
+                            ${unusedDittos.map(d => `Métamorph #${d.index + 1}`).join(', ')}
+                        </div>
+                    </div>`;
+                }
                 
                 container.innerHTML = html;
             }
@@ -880,6 +964,7 @@
             updateDisplay() {
                 const validCount = this.getAllDittos().length;
                 document.getElementById('validDittosCount').textContent = validCount;
+                document.getElementById('validDittosCountResult').textContent = validCount;
                 document.getElementById('currentMode').textContent = this.advancedMode ? 'Avancé' : 'Auto';
                 
                 // Mettre à jour l'affichage des contrôles avancés
