@@ -710,46 +710,54 @@
                 // Total des 31 disponibles (stats avec au moins un 31)
                 const total31 = [...new Set([...ditto131, ...ditto231])].length;
 
-                let bestStrategy = {
-                    type: 'destinyknot_only',
-                    item1: 'destinyknot',
-                    item2: null,
-                    expected31: Math.min(5, total31) + this.RANDOM_31_CHANCE,
-                    explanation: 'Destiny Knot seul: 5 IVs hérités (parmi les ' + total31 + ' stats avec 31 disponibles) + 1 aléatoire',
-                    score: Math.min(5, total31) + this.RANDOM_31_CHANCE
-                };
-
-                // STRATÉGIE 1: Destiny Knot + Power Item
+                // STRATÉGIE 1: Destiny Knot + Power Item (TOUJOURS LA MEILLEURE QUAND POSSIBLE)
+                let bestStrategy = null;
+                
+                // Essayer toutes les combinaisons Power Item + Destiny Knot
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
-                    // Avec DK + Power Item: 1 garanti + 4 hérités parmi les autres stats avec 31
+                    // Avec DK + Power Item: 1 garanti + 4 hérités parmi les autres stats avec 31 + 1 aléatoire
                     const other31 = total31 - 1; // On exclut la stat garantie
-                    const expected = 1 + Math.min(4, other31) + this.RANDOM_31_CHANCE;
+                    const expectedInherited = Math.min(4, other31);
+                    const expected = 1 + expectedInherited + this.RANDOM_31_CHANCE;
                     
-                    if (expected > bestStrategy.expected31) {
-                        bestStrategy = {
-                            type: 'destinyknot_poweritem',
-                            item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
-                            item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
-                            expected31: expected,
-                            explanation: `Garantit le 31 en ${stats[exclusive]} + 4 autres IVs hérités + 1 aléatoire`,
-                            score: expected
-                        };
+                    const strategy = {
+                        type: 'destinyknot_poweritem',
+                        item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
+                        item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
+                        expected31: expected,
+                        explanation: `Garantit le 31 en ${stats[exclusive]} + ${expectedInherited} autres IVs hérités + 1 aléatoire`,
+                        score: expected
+                    };
+                    
+                    if (!bestStrategy || expected > bestStrategy.expected31) {
+                        bestStrategy = strategy;
                     }
                 }
 
+                // Si on n'a pas trouvé de stratégie Power Item + Destiny Knot, utiliser Destiny Knot seul
+                if (!bestStrategy) {
+                    const expected = Math.min(5, total31) + this.RANDOM_31_CHANCE;
+                    bestStrategy = {
+                        type: 'destinyknot_only',
+                        item1: 'destinyknot',
+                        item2: null,
+                        expected31: expected,
+                        explanation: 'Destiny Knot seul: ' + Math.min(5, total31) + ' IVs hérités + 1 aléatoire',
+                        score: expected
+                    };
+                }
+
                 // STRATÉGIE 2: Deux Power Items (MÉCANIQUE SPÉCIFIQUE DU SERVEUR)
+                // Seulement si c'est meilleur que Destiny Knot + Power Item
                 if (exclusive31_ditto1.length >= 1 && exclusive31_ditto2.length >= 1) {
                     const stat1 = exclusive31_ditto1[0];
                     const stat2 = exclusive31_ditto2[0];
                     
-                    // Mécanique spécifique: 50% chance pour chaque Power Item
-                    // Si un Power Item s'active, il lock 1 IV + 4 autres hérités avec Destiny Knot
+                    // 50% chance pour chaque Power Item + 4 hérités + 1 aléatoire
                     const expectedWhenStat1 = 1 + Math.min(4, total31 - 1) + this.RANDOM_31_CHANCE;
                     const expectedWhenStat2 = 1 + Math.min(4, total31 - 1) + this.RANDOM_31_CHANCE;
-                    
-                    // Moyenne pondérée: 50% chance pour chaque scénario
                     const expected = 0.5 * expectedWhenStat1 + 0.5 * expectedWhenStat2;
                     
                     if (expected > bestStrategy.expected31) {
@@ -764,7 +772,8 @@
                     }
                 }
 
-                // STRATÉGIE 3: Power Item seul
+                // STRATÉGIE 3: Power Item seul (SEULEMENT SI PAS MIEUX)
+                // Cette stratégie est rarement optimale, donc on la considère en dernier
                 for (const exclusive of [...exclusive31_ditto1, ...exclusive31_ditto2]) {
                     const parentHas31 = exclusive31_ditto1.includes(exclusive) ? 'ditto1' : 'ditto2';
                     
@@ -772,6 +781,7 @@
                     const other31 = total31 - 1;
                     const expected = 1 + Math.min(2, other31) + (3 * this.RANDOM_31_CHANCE);
                     
+                    // Seulement si c'est meilleur que les stratégies précédentes
                     if (expected > bestStrategy.expected31) {
                         bestStrategy = {
                             type: 'poweritem_only',
@@ -793,7 +803,7 @@
                         item1: null,
                         item2: null,
                         expected31: expectedRandom,
-                        explanation: 'Aucun objet: 3 IVs hérités + 3 aléatoires (faible chance de 31)',
+                        explanation: 'Aucun objet: 3 IVs hérités + 3 aléatoires',
                         score: expectedRandom
                     };
                 }
