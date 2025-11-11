@@ -101,6 +101,29 @@
             color: #2c3e50;
         }
 
+        .import-export {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #b8daff;
+        }
+
+        .import-export h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .import-export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .import-export-buttons button {
+            flex: 1;
+        }
+
         .ditto-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -177,12 +200,12 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            flex: 1;
         }
 
         .btn-optimize {
             background: linear-gradient(135deg, #27ae60, #2ecc71);
             color: white;
+            flex: 1;
         }
 
         .btn-optimize:hover {
@@ -193,11 +216,22 @@
         .btn-reset {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
+            flex: 1;
         }
 
         .btn-reset:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
         }
 
         .optimization-info {
@@ -294,12 +328,7 @@
             color: white;
         }
 
-        .iv-high {
-            background: #f39c12;
-            color: white;
-        }
-
-        .iv-low {
+        .iv-other {
             background: #e74c3c;
             color: white;
         }
@@ -330,19 +359,13 @@
             font-size: 0.9em;
         }
 
-        .expected-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            margin-top: 10px;
-        }
-
-        .expected-stat {
-            text-align: center;
-            padding: 3px;
-            border-radius: 3px;
-            font-size: 0.8em;
-            background: #e9ecef;
+        .strategy-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85em;
         }
 
         .footer {
@@ -422,7 +445,7 @@
     <div class="container">
         <header>
             <h1>🔬 Métamorph Optimizer</h1>
-            <p class="subtitle">Optimise la reproduction de Métamorph dans Cobblemon</p>
+            <p class="subtitle">Optimise la reproduction de Métamorph dans Cobblemon - Seuls les IVs à 31 comptent</p>
         </header>
 
         <div class="main-content">
@@ -432,15 +455,24 @@
                 <div class="instructions">
                     <h3>Comment utiliser :</h3>
                     <ul>
-                        <li>Remplissez les IVs (0-31) pour chaque Métamorph</li>
-                        <li>L'optimiseur sélectionnera automatiquement les 30 meilleurs Métamorph</li>
-                        <li>Il formera 15 couples optimaux avec les objets appropriés</li>
+                        <li><strong>Seuls les IVs à 31 comptent !</strong> Les autres sont considérés comme 0</li>
+                        <li>L'optimiseur sélectionne automatiquement les 30 meilleurs Métamorph</li>
+                        <li>Il forme 15 couples optimaux avec stratégie d'objets intelligente</li>
                         <li>Maximum 60 Métamorph peuvent être saisis</li>
                     </ul>
                 </div>
 
+                <div class="import-export">
+                    <h4>📁 Import/Export</h4>
+                    <p>Importez ou exportez vos Métamorph en format JSON</p>
+                    <div class="import-export-buttons">
+                        <button class="btn-export" onclick="exportDittos()">📤 Exporter</button>
+                        <button class="btn-import" onclick="importDittos()">📥 Importer</button>
+                    </div>
+                </div>
+
                 <div class="ditto-counter">
-                    Métamorph valides: <span id="validDittosCount">0</span> / 30 maximum utilisés
+                    Métamorph valides (avec au moins un 31): <span id="validDittosCount">0</span> / 30 maximum utilisés
                 </div>
 
                 <div class="ditto-grid" id="dittoGrid">
@@ -478,7 +510,7 @@
         </div>
 
         <footer class="footer">
-            <p>Optimiseur spécial Cobblemon - Règles de reproduction adaptées aux serveurs publics</p>
+            <p>Optimiseur spécial Cobblemon - Seuls les IVs à 31 comptent - Stratégie d'objets intelligente</p>
         </footer>
     </div>
 
@@ -552,11 +584,14 @@
                 const validDittos = [];
                 
                 for (let i = 0; i < this.dittos.length; i++) {
-                    if (this.dittos[i] && this.dittos[i].some(iv => iv > 0)) {
+                    if (this.dittos[i] && this.dittos[i].some(iv => iv === 31)) {
+                        // Convertir en binaire : 31 = 1, autre = 0
+                        const binaryIVs = this.dittos[i].map(iv => iv === 31 ? 1 : 0);
                         validDittos.push({
-                            ivs: this.dittos[i],
+                            ivs: binaryIVs,
+                            originalIVs: this.dittos[i],
                             index: i,
-                            score: this.calculateIndividualScore(this.dittos[i])
+                            score: this.calculateIndividualScore(binaryIVs)
                         });
                     }
                 }
@@ -564,118 +599,131 @@
                 return validDittos;
             }
 
-            calculateIndividualScore(ditto) {
-                if (!ditto) return 0;
-                
-                let score = 0;
-                for (let i = 0; i < 6; i++) {
-                    score += ditto[i] || 0;
-                    if (ditto[i] === 31) score += 10;
-                }
-                return score;
+            calculateIndividualScore(binaryIVs) {
+                return binaryIVs.reduce((sum, iv) => sum + iv, 0);
             }
 
-            calculateInheritance(ditto1, ditto2, item1, item2) {
-                let inheritedStats = 3;
-                let guaranteedStat = -1;
+            // Nouvelle stratégie d'optimisation basée uniquement sur les 31
+            findOptimalStrategy(ditto1, ditto2) {
+                const stats = ['HP', 'Attaque', 'Defense', 'Attaque Spé.', 'Defense Spé.', 'Vitesse'];
                 
-                if (item1 === 'destinyknot' || item2 === 'destinyknot') {
-                    inheritedStats = 5;
-                }
+                // Compter les 31 de chaque parent
+                const ditto131 = ditto1.ivs.filter(iv => iv === 1).length;
+                const ditto231 = ditto2.ivs.filter(iv => iv === 1).length;
                 
-                const powerItems = [];
-                if (item1 && item1.startsWith('power')) powerItems.push(item1);
-                if (item2 && item2.startsWith('power')) powerItems.push(item2);
-                
-                if (powerItems.length === 1) {
-                    guaranteedStat = this.getPowerItemStat(powerItems[0]);
-                } else if (powerItems.length === 2) {
-                    guaranteedStat = this.getPowerItemStat(Math.random() < 0.5 ? powerItems[0] : powerItems[1]);
-                }
-                
-                return { inheritedStats, guaranteedStat };
-            }
-
-            getPowerItemStat(item) {
-                const powerMap = {
-                    'powerweight': 0,
-                    'powerbracer': 1,
-                    'powerbelt': 2,
-                    'powerlens': 3,
-                    'powerband': 4,
-                    'poweranklet': 5
-                };
-                return powerMap[item] || -1;
-            }
-
-            calculatePairScore(ditto1, ditto2, item1, item2) {
-                const inheritance = this.calculateInheritance(ditto1, ditto2, item1, item2);
-                
-                let score = 0;
-                let perfectStats = 0;
-                let expectedIVs = [];
+                // Identifier les stats où au moins un parent a 31
+                const shared31 = [];
+                const exclusive31 = [];
                 
                 for (let i = 0; i < 6; i++) {
-                    let expectedIV;
-                    
-                    if (i === inheritance.guaranteedStat) {
-                        expectedIV = Math.max(ditto1[i] || 0, ditto2[i] || 0);
-                    } else if (inheritance.inheritedStats > 0) {
-                        const maxIV = Math.max(ditto1[i] || 0, ditto2[i] || 0);
-                        const inheritanceChance = inheritance.inheritedStats / (inheritance.guaranteedStat !== -1 ? 5 : 6);
-                        const randomIV = 15.5;
-                        
-                        expectedIV = maxIV * inheritanceChance + randomIV * (1 - inheritanceChance);
-                    } else {
-                        expectedIV = 15.5;
+                    if (ditto1.ivs[i] === 1 || ditto2.ivs[i] === 1) {
+                        shared31.push(i);
                     }
-                    
-                    expectedIVs.push(expectedIV);
-                    score += expectedIV;
-                    
-                    if (expectedIV >= 30) perfectStats++;
+                    if (ditto1.ivs[i] === 1 && ditto2.ivs[i] === 0) {
+                        exclusive31.push({stat: i, parent: 'ditto1'});
+                    }
+                    if (ditto2.ivs[i] === 1 && ditto1.ivs[i] === 0) {
+                        exclusive31.push({stat: i, parent: 'ditto2'});
+                    }
                 }
-                
-                // Bonus pour la complémentarité
-                let complementaryBonus = 0;
-                for (let i = 0; i < 6; i++) {
-                    if (ditto1[i] === 31 && (ditto2[i] || 0) < 20) complementaryBonus += 8;
-                    else if (ditto2[i] === 31 && (ditto1[i] || 0) < 20) complementaryBonus += 8;
-                    else if (ditto1[i] === 31 && ditto2[i] === 31) complementaryBonus += 15;
-                }
-                
-                score += complementaryBonus;
-                
-                return {
-                    totalScore: score,
-                    perfectStats: perfectStats,
-                    expectedIVs: expectedIVs,
-                    inheritedStats: inheritance.inheritedStats,
-                    guaranteedStat: inheritance.guaranteedStat,
-                    items: { item1, item2 }
-                };
-            }
 
-            findOptimalItems(ditto1, ditto2) {
-                const items = [null, 'destinyknot', 'powerweight', 'powerbracer', 'powerbelt', 'powerlens', 'powerband', 'poweranklet'];
-                let bestScore = -1;
-                let bestItems = { item1: null, item2: null };
-                
-                for (const item1 of items) {
-                    for (const item2 of items) {
-                        try {
-                            const scoreInfo = this.calculatePairScore(ditto1.ivs, ditto2.ivs, item1, item2);
-                            if (scoreInfo.totalScore > bestScore) {
-                                bestScore = scoreInfo.totalScore;
-                                bestItems = { item1, item2 };
-                            }
-                        } catch (e) {
-                            console.error("Erreur dans calculatePairScore:", e);
+                // STRATÉGIE 1: Destiny Knot + Power Item pour une stat exclusive
+                // On garantit une stat exclusive et on hérite 4 autres stats
+                let bestStrategy = {
+                    type: 'destinyknot_poweritem',
+                    item1: 'destinyknot',
+                    item2: null,
+                    guaranteedStat: -1,
+                    expected31: 0,
+                    explanation: ''
+                };
+
+                // Chercher la meilleure stat exclusive à garantir
+                for (const exclusive of exclusive31) {
+                    // Nombre de stats avec 31 qu'on peut hériter (en excluant la stat garantie)
+                    const inheritable31 = shared31.filter(stat => stat !== exclusive.stat).length;
+                    // Avec Destiny Knot + Power Item: 1 stat garantie + 4 héritées parmi les restantes
+                    const expected = 1 + Math.min(4, inheritable31);
+                    
+                    if (expected > bestStrategy.expected31) {
+                        bestStrategy = {
+                            type: 'destinyknot_poweritem',
+                            item1: exclusive.parent === 'ditto1' ? this.getPowerItemForStat(exclusive.stat) : 'destinyknot',
+                            item2: exclusive.parent === 'ditto2' ? this.getPowerItemForStat(exclusive.stat) : 'destinyknot',
+                            guaranteedStat: exclusive.stat,
+                            expected31: expected,
+                            explanation: `Garantit le 31 en ${stats[exclusive.stat]} et hérite 4 autres stats avec 31`
+                        };
+                    }
+                }
+
+                // STRATÉGIE 2: Deux Power Items pour stats exclusives différentes
+                if (exclusive31.length >= 2) {
+                    // Prendre les deux premières stats exclusives différentes
+                    const stat1 = exclusive31[0];
+                    const stat2 = exclusive31.find(ex => ex.stat !== stat1.stat) || exclusive31[1];
+                    
+                    if (stat1 && stat2) {
+                        // Avec deux Power Items: 1 stat garantie (50% chaque) + 2 héritées
+                        const inheritable31 = shared31.filter(stat => stat !== stat1.stat && stat !== stat2.stat).length;
+                        const expected = 1 + Math.min(2, inheritable31); // 1 garanti en moyenne + 2 héritées
+                        
+                        if (expected > bestStrategy.expected31) {
+                            bestStrategy = {
+                                type: 'two_poweritems',
+                                item1: this.getPowerItemForStat(stat1.stat),
+                                item2: this.getPowerItemForStat(stat2.stat),
+                                guaranteedStat: -1,
+                                expected31: expected,
+                                explanation: `50% chance de garantir le 31 en ${stats[stat1.stat]} ou ${stats[stat2.stat]}, + 2 stats héritées`
+                            };
                         }
                     }
                 }
-                
-                return bestItems;
+
+                // STRATÉGIE 3: Destiny Knot seul (si beaucoup de 31 en commun)
+                const destinyKnotExpected = Math.min(5, shared31.length);
+                if (destinyKnotExpected > bestStrategy.expected31) {
+                    bestStrategy = {
+                        type: 'destinyknot_only',
+                        item1: 'destinyknot',
+                        item2: null,
+                        guaranteedStat: -1,
+                        expected31: destinyKnotExpected,
+                        explanation: `Hérite 5 stats parmi les ${shared31.length} stats avec 31 disponibles`
+                    };
+                }
+
+                // STRATÉGIE 4: Power Item seul (si une stat exclusive très importante)
+                for (const exclusive of exclusive31) {
+                    const inheritable31 = shared31.filter(stat => stat !== exclusive.stat).length;
+                    const expected = 1 + Math.min(2, inheritable31); // 1 garanti + 2 héritées
+                    
+                    if (expected > bestStrategy.expected31) {
+                        bestStrategy = {
+                            type: 'poweritem_only',
+                            item1: exclusive.parent === 'ditto1' ? this.getPowerItemForStat(exclusive.stat) : null,
+                            item2: exclusive.parent === 'ditto2' ? this.getPowerItemForStat(exclusive.stat) : null,
+                            guaranteedStat: exclusive.stat,
+                            expected31: expected,
+                            explanation: `Garantit le 31 en ${stats[exclusive.stat]} et hérite 2 autres stats`
+                        };
+                    }
+                }
+
+                return bestStrategy;
+            }
+
+            getPowerItemForStat(statIndex) {
+                const powerItems = [
+                    'powerweight',    // HP
+                    'powerbracer',    // Attaque
+                    'powerbelt',      // Défense
+                    'powerlens',      // Attaque Spéciale
+                    'powerband',      // Défense Spéciale
+                    'poweranklet'     // Vitesse
+                ];
+                return powerItems[statIndex];
             }
 
             optimizePairs() {
@@ -689,13 +737,12 @@
                     
                     if (totalDittos < 2) {
                         this.showResults([], [], totalDittos);
-                        alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs !');
+                        alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs à 31 !');
                         return;
                     }
 
                     this.showLoading();
 
-                    // Utiliser setTimeout pour permettre à l'interface de se mettre à jour
                     setTimeout(() => {
                         try {
                             let selectedDittos = allDittos;
@@ -710,7 +757,7 @@
                             const usedIndices = new Set(selectedDittos.map(d => d.index));
                             const unusedDittos = allDittos.filter(d => !usedIndices.has(d.index));
 
-                            const pairs = this.findBestPairsWithItems(selectedDittos);
+                            const pairs = this.findBestPairs(selectedDittos);
                             console.log(`Couples formés: ${pairs.length}`);
                             
                             this.showResults(pairs, unusedDittos, selectedDittos.length);
@@ -725,7 +772,7 @@
                 }
             }
 
-            findBestPairsWithItems(dittos) {
+            findBestPairs(dittos) {
                 const pairs = [];
                 const usedIndices = new Set();
                 const allPairs = [];
@@ -737,20 +784,13 @@
                         const ditto1 = dittos[i];
                         const ditto2 = dittos[j];
                         
-                        const items = this.findOptimalItems(ditto1, ditto2);
-                        
-                        const scoreInfo = this.calculatePairScore(
-                            ditto1.ivs, ditto2.ivs, items.item1, items.item2
-                        );
+                        const strategy = this.findOptimalStrategy(ditto1, ditto2);
                         
                         allPairs.push({
-                            ditto1: { ...ditto1, item: items.item1 },
-                            ditto2: { ...ditto2, item: items.item2 },
-                            score: scoreInfo.totalScore,
-                            perfectStats: scoreInfo.perfectStats,
-                            expectedIVs: scoreInfo.expectedIVs,
-                            inheritedStats: scoreInfo.inheritedStats,
-                            guaranteedStat: scoreInfo.guaranteedStat
+                            ditto1: { ...ditto1, item: strategy.item1 },
+                            ditto2: { ...ditto2, item: strategy.item2 },
+                            strategy: strategy,
+                            score: strategy.expected31
                         });
                     }
                 }
@@ -777,7 +817,7 @@
                 container.innerHTML = `
                     <div class="loading">
                         <div>🔍 Analyse des Métamorph...</div>
-                        <div>Calcul des meilleurs couples et objets en cours</div>
+                        <div>Calcul des meilleures stratégies d'objets en cours</div>
                     </div>
                 `;
             }
@@ -802,7 +842,7 @@
                     container.innerHTML = `
                         <div class="loading">
                             ❌ Aucun couple optimal trouvé.<br>
-                            Vérifiez que vous avez saisi au moins 2 Métamorph avec des IVs.
+                            Vérifiez que vous avez saisi au moins 2 Métamorph avec des IVs à 31.
                         </div>
                     `;
                     return;
@@ -834,7 +874,7 @@
                         <h4>📦 Métamorph non utilisés (${unusedDittos.length})</h4>
                         <p>Ces Métamorph n'ont pas été sélectionnés pour former des couples :</p>
                         <div style="margin-top: 10px; font-size: 0.9em;">
-                            ${unusedDittos.map(d => `Métamorph #${d.index + 1}`).join(', ')}
+                            ${unusedDittos.map(d => `Métamorph #${d.index + 1} (${d.score}×31)`).join(', ')}
                         </div>
                     </div>`;
                 }
@@ -865,7 +905,7 @@
 
                 let itemsHtml = `<div class="items-summary">
                     <h4>🎁 Objets recommandés</h4>
-                    <p>Distribution automatique des objets pour les ${pairs.length * 2} Métamorph utilisés :</p>
+                    <p>Distribution automatique des objets pour maximiser les chances d'obtenir des œufs 6×31 :</p>
                     <div class="items-grid">`;
 
                 Object.keys(itemUsage).forEach(item => {
@@ -896,57 +936,43 @@
                 };
 
                 const statNames = ['HP', 'Attaque', 'Défense', 'Attaque Spé.', 'Défense Spé.', 'Vitesse'];
-                
-                const expectedStats = pair.expectedIVs.map((iv, index) => `
-                    <div class="expected-stat">
-                        ${statNames[index]}: ${iv.toFixed(1)}
-                    </div>
-                `).join('');
 
                 return `
                     <div class="couple-card">
                         <div class="couple-header">
                             <h3>Couple #${pairNumber}</h3>
                             <div class="couple-score">
-                                Score: ${Math.round(pair.score)} | ${pair.perfectStats}/6 excellents
+                                ${pair.strategy.expected31}×31 attendus
                             </div>
                         </div>
                         <div class="parents">
-                            ${this.createParentCard('Parent A', pair.ditto1, pair.guaranteedStat)}
-                            ${this.createParentCard('Parent B', pair.ditto2, pair.guaranteedStat)}
+                            ${this.createParentCard('Parent A', pair.ditto1)}
+                            ${this.createParentCard('Parent B', pair.ditto2)}
                         </div>
                         <div class="couple-info">
-                            <div><strong>Objets recommandés:</strong></div>
+                            <div><strong>Stratégie recommandée:</strong></div>
                             <div>
                                 <span class="item-display">${itemNames[pair.ditto1.item] || 'Aucun'}</span> + 
                                 <span class="item-display">${itemNames[pair.ditto2.item] || 'Aucun'}</span>
                             </div>
-                            <div style="margin-top: 8px; font-size: 0.85em;">
-                                <strong>Héritage:</strong> ${pair.inheritedStats} IVs hérités
-                                ${pair.guaranteedStat !== -1 ? ` | Stat garantie: ${statNames[pair.guaranteedStat]}` : ''}
-                            </div>
-                            <div class="expected-stats">
-                                ${expectedStats}
+                            <div class="strategy-info">
+                                <strong>${pair.strategy.type.replace(/_/g, ' ').toUpperCase()}</strong><br>
+                                ${pair.strategy.explanation}
+                                ${pair.strategy.guaranteedStat !== -1 ? `<br>Stat garantie: ${statNames[pair.strategy.guaranteedStat]}` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            createParentCard(title, ditto, guaranteedStat) {
+            createParentCard(title, ditto) {
                 const stats = ['HP', 'Attaque', 'Defense', 'Attaque Spé.', 'Defense Spé.', 'Vitesse'];
                 
-                const ivDisplays = ditto.ivs.map((iv, index) => {
-                    let className = 'iv-low';
-                    if (iv === 31) className = 'iv-31';
-                    else if (iv >= 25) className = 'iv-high';
-                    
-                    const isGuaranteed = index === guaranteedStat;
-                    const marker = isGuaranteed ? ' 🛡️' : '';
-                    
+                const ivDisplays = ditto.originalIVs.map((iv, index) => {
+                    const className = iv === 31 ? 'iv-31' : 'iv-other';
                     return `
                         <div class="iv-value ${className}">
-                            ${stats[index]}: ${iv}${marker}
+                            ${stats[index]}: ${iv}
                         </div>
                     `;
                 }).join('');
@@ -954,11 +980,46 @@
                 return `
                     <div class="parent">
                         <h4>${title} (Métamorph #${ditto.index + 1})</h4>
+                        <div>${ditto.score}×31</div>
                         <div class="iv-display">
                             ${ivDisplays}
                         </div>
                     </div>
                 `;
+            }
+
+            // Import/Export JSON
+            exportToJSON() {
+                const dittosData = this.dittos.map((ditto, index) => ({
+                    id: index + 1,
+                    ivs: ditto || [0, 0, 0, 0, 0, 0]
+                }));
+                return JSON.stringify(dittosData, null, 2);
+            }
+
+            importFromJSON(jsonData) {
+                try {
+                    const data = JSON.parse(jsonData);
+                    const newDittos = [];
+                    
+                    for (let i = 0; i < this.maxDittos; i++) {
+                        if (i < data.length) {
+                            newDittos[i] = data[i].ivs;
+                        } else {
+                            newDittos[i] = [0, 0, 0, 0, 0, 0];
+                        }
+                    }
+                    
+                    this.dittos = newDittos;
+                    this.createDittoGrid();
+                    this.saveToStorage();
+                    this.updateDisplay();
+                    
+                    return true;
+                } catch (e) {
+                    console.error("Erreur d'import JSON:", e);
+                    return false;
+                }
             }
 
             resetAll() {
@@ -1018,6 +1079,41 @@
 
         function resetAll() {
             optimizer.resetAll();
+        }
+
+        function exportDittos() {
+            const jsonData = optimizer.exportToJSON();
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'metamorph-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importDittos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const success = optimizer.importFromJSON(e.target.result);
+                        if (success) {
+                            alert('✅ Métamorph importés avec succès !');
+                        } else {
+                            alert('❌ Erreur lors de l\'import. Vérifiez le format du fichier.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
         }
     </script>
 </body>
