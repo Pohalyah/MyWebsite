@@ -94,27 +94,6 @@
             margin-bottom: 8px;
         }
 
-        .config-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #e8f4fd;
-            border-radius: 8px;
-            border: 1px solid #b8daff;
-        }
-
-        .config-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
-            color: #2c3e50;
-            cursor: pointer;
-        }
-
-        .config-label input {
-            transform: scale(1.2);
-        }
-
         .ditto-counter {
             text-align: center;
             margin-bottom: 15px;
@@ -124,7 +103,7 @@
 
         .ditto-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
             max-height: 600px;
@@ -182,27 +161,6 @@
         .iv-input input:focus {
             outline: none;
             border-color: #3498db;
-        }
-
-        .item-selection {
-            margin-top: 10px;
-        }
-
-        .item-selection label {
-            font-size: 0.8em;
-            font-weight: bold;
-            color: #7f8c8d;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .item-selection select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            font-size: 0.9em;
-            background: white;
         }
 
         .buttons {
@@ -395,18 +353,6 @@
             font-size: 0.9em;
         }
 
-        .advanced-controls {
-            margin-top: 10px;
-            padding: 10px;
-            background: #fff3cd;
-            border-radius: 4px;
-            border: 1px solid #ffeaa7;
-        }
-
-        .advanced-controls.hidden {
-            display: none;
-        }
-
         .selection-info {
             background: #d4edda;
             border: 1px solid #c3e6cb;
@@ -429,6 +375,38 @@
             margin-bottom: 10px;
             color: #721c24;
         }
+
+        .items-summary {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .items-summary h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .item-assignment {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .item-assignment h5 {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -446,22 +424,14 @@
                     <h3>Comment utiliser :</h3>
                     <ul>
                         <li>Remplissez les IVs (0-31) pour chaque Métamorph</li>
-                        <li>Sélectionnez les objets tenus (optionnel)</li>
-                        <li>L'optimiseur sélectionnera les 30 meilleurs Métamorph maximum</li>
-                        <li>Maximum 15 couples formés (30 Métamorph utilisés)</li>
-                        <li>Les Métamorph non sélectionnés ne seront pas utilisés</li>
+                        <li>L'optimiseur sélectionnera automatiquement les 30 meilleurs Métamorph</li>
+                        <li>Il formera 15 couples optimaux avec les objets appropriés</li>
+                        <li>Maximum 60 Métamorph peuvent être saisis</li>
                     </ul>
                 </div>
 
                 <div class="ditto-counter">
                     Métamorph valides: <span id="validDittosCount">0</span> / 30 maximum utilisés
-                </div>
-
-                <div class="config-section">
-                    <label class="config-label">
-                        <input type="checkbox" id="advancedMode" onchange="toggleAdvancedMode()">
-                        Mode avancé (sélection manuelle des objets)
-                    </label>
                 </div>
 
                 <div class="ditto-grid" id="dittoGrid">
@@ -486,8 +456,8 @@
                         <span id="validDittosCountResult">0</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Mode:</span>
-                        <span id="currentMode">Auto</span>
+                        <span class="info-label">Couples formés:</span>
+                        <span id="couplesCount">0</span>
                     </div>
                 </div>
                 <div class="results-container" id="resultsContainer">
@@ -507,11 +477,20 @@
         class CobblemonOptimizer {
             constructor() {
                 this.dittos = [];
-                this.items = [];
                 this.maxDittos = 60; // Maximum qu'on peut entrer
+                // Objets disponibles (15 exemplaires de chaque)
+                this.availableItems = {
+                    'destinyknot': 15,
+                    'powerweight': 15,    // HP
+                    'powerbracer': 15,    // Attaque
+                    'powerbelt': 15,      // Défense
+                    'powerlens': 15,      // Attaque Spéciale
+                    'powerband': 15,      // Défense Spéciale
+                    'poweranklet': 15     // Vitesse
+                };
+                
                 this.maxUsedDittos = 30; // Maximum utilisés dans l'optimisation
                 this.maxPairs = 15; // Maximum de couples
-                this.advancedMode = false;
                 this.init();
             }
 
@@ -538,22 +517,6 @@
                     <h3>Métamorph #${index + 1}</h3>
                     <div class="iv-inputs">
                         ${this.createIVInputs(index)}
-                    </div>
-                    <div class="item-selection">
-                        <label>Objet tenu:</label>
-                        <select data-ditto="${index}" onchange="optimizer.updateItem(${index}, this.value)">
-                            <option value="">Aucun</option>
-                            <option value="destinyknot">Destiny Knot</option>
-                            <option value="powerweight">Poids Pouvoir (HP)</option>
-                            <option value="powerbracer">Poignet Pouvoir (Attaque)</option>
-                            <option value="powerbelt">Ceinture Pouvoir (Défense)</option>
-                            <option value="powerlens">Lentille Pouvoir (Attaque Spé.)</option>
-                            <option value="powerband">Bandeau Pouvoir (Défense Spé.)</option>
-                            <option value="poweranklet">Guêtre Pouvoir (Vitesse)</option>
-                        </select>
-                    </div>
-                    <div class="advanced-controls hidden" id="advancedControls${index}">
-                        <small>Mode avancé: Objet fixé</small>
                     </div>
                 `;
                 return card;
@@ -587,21 +550,10 @@
                 this.updateDisplay();
             }
 
-            updateItem(dittoIndex, item) {
-                this.items[dittoIndex] = item;
-                
-                const select = document.querySelector(`select[data-ditto="${dittoIndex}"]`);
-                if (select) select.value = item;
-                
-                this.saveToStorage();
-                this.updateDisplay();
-            }
-
             getAllDittos() {
                 return this.dittos
                     .map((ditto, index) => ditto ? { 
                         ivs: ditto, 
-                        item: this.items[index] || null, 
                         index,
                         score: this.calculateIndividualScore(ditto)
                     } : null)
@@ -752,12 +704,14 @@
                     const usedIndices = new Set(selectedDittos.map(d => d.index));
                     const unusedDittos = allDittos.filter(d => !usedIndices.has(d.index));
 
-                    const pairs = this.findBestPairs(selectedDittos);
+                    // Réinitialiser les compteurs d'objets
+                    // Trouver les meilleurs couples avec attribution automatique des objets
+                    const pairs = this.findBestPairsWithItems(selectedDittos);
                     this.showResults(pairs, unusedDittos, selectedDittos.length);
                 }, 100);
             }
 
-            findBestPairs(dittos) {
+            findBestPairsWithItems(dittos) {
                 const pairs = [];
                 const usedIndices = new Set();
                 const allPairs = [];
@@ -768,14 +722,8 @@
                         const ditto1 = dittos[i];
                         const ditto2 = dittos[j];
                         
-                        let items;
-                        if (this.advancedMode && ditto1.item && ditto2.item) {
-                            // Mode avancé: utiliser les objets fixés
-                            items = { item1: ditto1.item, item2: ditto2.item };
-                        } else {
-                            // Mode auto: trouver les meilleurs objets
-                            items = this.findOptimalItems(ditto1, ditto2);
-                        }
+                        // Trouver les objets optimaux pour ce couple
+                        const items = this.findOptimalItems(ditto1, ditto2);
                         
                         const scoreInfo = this.calculatePairScore(
                             ditto1.ivs, ditto2.ivs, items.item1, items.item2
@@ -815,7 +763,7 @@
                 container.innerHTML = `
                     <div class="loading">
                         <div>🔍 Analyse des Métamorph...</div>
-                        <div>Calcul des meilleurs couples en cours</div>
+                        <div>Calcul des meilleurs couples et objets en cours</div>
                     </div>
                 `;
             }
@@ -823,6 +771,8 @@
             showResults(pairs, unusedDittos, usedCount) {
                 const container = document.getElementById('resultsContainer');
                 const totalDittos = this.getAllDittos().length;
+                
+                document.getElementById('couplesCount').textContent = pairs.length;
                 
                 if (pairs.length === 0) {
                     container.innerHTML = `
@@ -853,6 +803,9 @@
                 pairs.forEach((pair, index) => {
                     html += this.createPairCard(pair, index + 1);
                 });
+
+                // Résumé des objets attribués
+                html += this.createItemsSummary(pairs);
                 
                 // Afficher les Métamorph non utilisés
                 if (unusedDittos.length > 0) {
@@ -866,6 +819,50 @@
                 }
                 
                 container.innerHTML = html;
+            }
+
+            createItemsSummary(pairs) {
+                const itemNames = {
+                    'destinyknot': 'Destiny Knot',
+                    'powerweight': 'Poids Pouvoir (HP)',
+                    'powerbracer': 'Poignet Pouvoir (Attaque)',
+                    'powerbelt': 'Ceinture Pouvoir (Défense)',
+                    'powerlens': 'Lentille Pouvoir (Attaque Spé.)',
+                    'powerband': 'Bandeau Pouvoir (Défense Spé.)',
+                    'poweranklet': 'Guêtre Pouvoir (Vitesse)',
+                    '': 'Aucun'
+                };
+
+                // Compter l'utilisation des objets
+                const itemUsage = {};
+                pairs.forEach(pair => {
+                    [pair.ditto1, pair.ditto2].forEach(ditto => {
+                        if (ditto.item) {
+                            itemUsage[ditto.item] = (itemUsage[ditto.item] || 0) + 1;
+                        }
+                    });
+                });
+
+                let itemsHtml = `<div class="items-summary">
+                    <h4>🎁 Objets recommandés</h4>
+                    <p>Distribution automatique des objets pour les 30 Métamorph sélectionnés :</p>
+                    <div class="items-grid">`;
+
+                // Afficher les objets utilisés
+                Object.keys(itemUsage).forEach(item => {
+                    if (itemUsage[item] > 0) {
+                        itemsHtml += `
+                            <div class="item-assignment">
+                                <h5>${itemNames[item]}</h5>
+                                <div>Utilisé: ${itemUsage[item]} fois</div>
+                                <div>Disponible: ${this.availableItems[item]} exemplaires</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                itemsHtml += `</div></div>`;
+                return itemsHtml;
             }
 
             createPairCard(pair, pairNumber) {
@@ -948,7 +945,6 @@
 
             resetAll() {
                 this.dittos = [];
-                this.items = [];
                 this.createDittoGrid();
                 this.saveToStorage();
                 this.updateDisplay();
@@ -965,31 +961,16 @@
                 const validCount = this.getAllDittos().length;
                 document.getElementById('validDittosCount').textContent = validCount;
                 document.getElementById('validDittosCountResult').textContent = validCount;
-                document.getElementById('currentMode').textContent = this.advancedMode ? 'Avancé' : 'Auto';
-                
-                // Mettre à jour l'affichage des contrôles avancés
-                for (let i = 0; i < this.maxDittos; i++) {
-                    const controls = document.getElementById(`advancedControls${i}`);
-                    if (controls) {
-                        controls.classList.toggle('hidden', !this.advancedMode);
-                    }
-                }
             }
 
             saveToStorage() {
                 localStorage.setItem('cobblemonOptimizer_dittos', JSON.stringify(this.dittos));
-                localStorage.setItem('cobblemonOptimizer_items', JSON.stringify(this.items));
-                localStorage.setItem('cobblemonOptimizer_advancedMode', JSON.stringify(this.advancedMode));
             }
 
             loadFromStorage() {
                 const savedDittos = localStorage.getItem('cobblemonOptimizer_dittos');
-                const savedItems = localStorage.getItem('cobblemonOptimizer_items');
-                const savedMode = localStorage.getItem('cobblemonOptimizer_advancedMode');
                 
                 if (savedDittos) this.dittos = JSON.parse(savedDittos);
-                if (savedItems) this.items = JSON.parse(savedItems);
-                if (savedMode) this.advancedMode = JSON.parse(savedMode);
                 
                 // Mettre à jour les inputs
                 this.dittos.forEach((ditto, dittoIndex) => {
@@ -1003,14 +984,6 @@
                     }
                 });
                 
-                // Mettre à jour les sélecteurs d'objets
-                this.items.forEach((item, dittoIndex) => {
-                    const select = document.querySelector(`select[data-ditto="${dittoIndex}"]`);
-                    if (select && item) select.value = item;
-                });
-                
-                // Mettre à jour le mode
-                document.getElementById('advancedMode').checked = this.advancedMode;
                 this.updateDisplay();
             }
         }
@@ -1025,12 +998,6 @@
 
         function resetAll() {
             optimizer.resetAll();
-        }
-
-        function toggleAdvancedMode() {
-            optimizer.advancedMode = document.getElementById('advancedMode').checked;
-            optimizer.saveToStorage();
-            optimizer.updateDisplay();
         }
     </script>
 </body>
