@@ -452,13 +452,23 @@
             letter-spacing: 2px;
             margin: 5px 0;
         }
+
+        .no-31-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #856404;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🔬 Métamorph Optimizer</h1>
-            <p class="subtitle">Seuls les IVs à 31 comptent - Tout le reste = 0</p>
+            <p class="subtitle">Tous les Métamorph comptent - Même sans 31 ils peuvent être utiles</p>
         </header>
 
         <div class="main-content">
@@ -466,13 +476,12 @@
                 <h2>📊 Entrez vos Métamorph</h2>
                 
                 <div class="instructions">
-                    <h3>Philosophie : Seuls les 31 comptent !</h3>
+                    <h3>Nouvelle philosophie : Tous les Métamorph comptent !</h3>
                     <ul>
-                        <li><strong>31 = 1</strong>, tout le reste = 0</li>
-                        <li>Un Métamorph avec 30,30,30,30,30,30 = 0×31</li>
-                        <li>Un Métamorph avec 31,0,0,0,0,0 = 1×31</li>
-                        <li>Objectif : œufs avec maximum de 31</li>
-                        <li>Les autres IVs sont ignorés dans les calculs</li>
+                        <li><strong>31 = 1</strong>, mais les autres IVs ne sont pas ignorés</li>
+                        <li>Les Métamorph sans 31 peuvent être utiles dans certaines stratégies</li>
+                        <li>Les IVs aléatoires ont une chance d'être 31 (1/32)</li>
+                        <li>Objectif : maximiser les chances d'obtenir des œufs avec des 31</li>
                     </ul>
                 </div>
 
@@ -486,7 +495,7 @@
                 </div>
 
                 <div class="ditto-counter">
-                    Métamorph valides (avec au moins un 31): <span id="validDittosCount">0</span> / 30 maximum utilisés
+                    Métamorph valides: <span id="validDittosCount">0</span> / 30 maximum utilisés
                 </div>
 
                 <div class="ditto-grid" id="dittoGrid">
@@ -524,7 +533,7 @@
         </div>
 
         <footer class="footer">
-            <p>Optimiseur Cobblemon - Philosophie : Seuls les IVs à 31 comptent, tout le reste = 0</p>
+            <p>Optimiseur Cobblemon - Tous les Métamorph sont comptabilisés, même sans 31</p>
         </footer>
     </div>
 
@@ -598,17 +607,20 @@
                 const validDittos = [];
                 
                 for (let i = 0; i < this.dittos.length; i++) {
-                    if (this.dittos[i] && this.dittos[i].some(iv => iv === 31)) {
+                    if (this.dittos[i]) {
                         // Convertir en binaire : 31 = 1, autre = 0
                         const binaryIVs = this.dittos[i].map(iv => iv === 31 ? 1 : 0);
                         const binaryString = binaryIVs.map(iv => iv ? '1' : '0').join('');
+                        const has31 = this.dittos[i].some(iv => iv === 31);
                         
                         validDittos.push({
-                            ivs: binaryIVs,
+                            ivs: this.dittos[i],
+                            binaryIVs: binaryIVs,
                             originalIVs: this.dittos[i],
                             binaryString: binaryString,
                             index: i,
-                            score: this.calculateIndividualScore(binaryIVs)
+                            score: this.calculateIndividualScore(this.dittos[i]),
+                            has31: has31
                         });
                     }
                 }
@@ -616,11 +628,14 @@
                 return validDittos;
             }
 
-            calculateIndividualScore(binaryIVs) {
-                return binaryIVs.reduce((sum, iv) => sum + iv, 0);
+            calculateIndividualScore(ivs) {
+                // Score basé sur la somme des IVs + bonus pour les 31
+                let score = ivs.reduce((sum, iv) => sum + iv, 0);
+                score += ivs.filter(iv => iv === 31).length * 10; // Bonus pour chaque 31
+                return score;
             }
 
-            // STRATÉGIES BASÉES UNIQUEMENT SUR LES 31
+            // STRATÉGIES BASÉES SUR TOUS LES MÉTAMORPH
             findOptimalStrategy(ditto1, ditto2) {
                 const stats = ['HP', 'Attaque', 'Defense', 'Attaque Spé.', 'Defense Spé.', 'Vitesse'];
                 
@@ -630,9 +645,9 @@
                 const shared31 = []; // Stats où les deux ont 31
                 
                 for (let i = 0; i < 6; i++) {
-                    if (ditto1.ivs[i] === 1) ditto131.push(i);
-                    if (ditto2.ivs[i] === 1) ditto231.push(i);
-                    if (ditto1.ivs[i] === 1 && ditto2.ivs[i] === 1) shared31.push(i);
+                    if (ditto1.ivs[i] === 31) ditto131.push(i);
+                    if (ditto2.ivs[i] === 31) ditto231.push(i);
+                    if (ditto1.ivs[i] === 31 && ditto2.ivs[i] === 31) shared31.push(i);
                 }
 
                 // Stats exclusives (31 sur un seul parent)
@@ -642,12 +657,17 @@
                 // Total des 31 disponibles (stats avec au moins un 31)
                 const total31 = [...new Set([...ditto131, ...ditto231])].length;
 
+                // Calculer la qualité moyenne des IVs pour les stats sans 31
+                const averageIV1 = ditto1.ivs.reduce((sum, iv) => sum + iv, 0) / 6;
+                const averageIV2 = ditto2.ivs.reduce((sum, iv) => sum + iv, 0) / 6;
+
                 let bestStrategy = {
                     type: 'destinyknot_only',
                     item1: 'destinyknot',
                     item2: null,
                     expected31: Math.min(5, total31),
-                    explanation: 'Destiny Knot seul: 5 IVs hérités (parmi les ' + total31 + ' stats avec 31 disponibles)'
+                    explanation: 'Destiny Knot seul: 5 IVs hérités (parmi les ' + total31 + ' stats avec 31 disponibles)',
+                    score: Math.min(5, total31)
                 };
 
                 // STRATÉGIE 1: Destiny Knot + Power Item
@@ -665,7 +685,8 @@
                             item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                             item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : 'destinyknot',
                             expected31: expected,
-                            explanation: `Garantit le 31 en ${stats[exclusive]} + 4 autres IVs hérités`
+                            explanation: `Garantit le 31 en ${stats[exclusive]} + 4 autres IVs hérités`,
+                            score: expected
                         };
                     }
                 }
@@ -686,7 +707,8 @@
                             item1: this.getPowerItemForStat(stat1),
                             item2: this.getPowerItemForStat(stat2),
                             expected31: expected,
-                            explanation: `50% chance de garantir le 31 en ${stats[stat1]} ou ${stats[stat2]} + 2 IVs hérités`
+                            explanation: `50% chance de garantir le 31 en ${stats[stat1]} ou ${stats[stat2]} + 2 IVs hérités`,
+                            score: expected
                         };
                     }
                 }
@@ -705,12 +727,26 @@
                             item1: parentHas31 === 'ditto1' ? this.getPowerItemForStat(exclusive) : null,
                             item2: parentHas31 === 'ditto2' ? this.getPowerItemForStat(exclusive) : null,
                             expected31: expected,
-                            explanation: `Garantit le 31 en ${stats[exclusive]} + 2 IVs hérités`
+                            explanation: `Garantit le 31 en ${stats[exclusive]} + 2 IVs hérités`,
+                            score: expected
                         };
                     }
                 }
 
-                // Si aucune stratégie n'est meilleure que Destiny Knot seul, on garde DK
+                // STRATÉGIE 4: Aucun objet (pour Métamorph sans 31)
+                // 3 IVs hérités + 3 aléatoires
+                if (!ditto1.has31 && !ditto2.has31) {
+                    const expectedRandom = 3 * (1/32); // 3 IVs aléatoires avec chance 1/32 d'être 31
+                    bestStrategy = {
+                        type: 'no_items',
+                        item1: null,
+                        item2: null,
+                        expected31: expectedRandom,
+                        explanation: 'Aucun objet: 3 IVs hérités + 3 aléatoires (faible chance de 31)',
+                        score: expectedRandom
+                    };
+                }
+
                 return bestStrategy;
             }
 
@@ -737,7 +773,7 @@
                     
                     if (totalDittos < 2) {
                         this.showResults([], [], totalDittos);
-                        alert('❌ Veuillez entrer au moins 2 Métamorph avec des IVs à 31 !');
+                        alert('❌ Veuillez entrer au moins 2 Métamorph !');
                         return;
                     }
 
@@ -790,7 +826,7 @@
                             ditto1: { ...ditto1, item: strategy.item1 },
                             ditto2: { ...ditto2, item: strategy.item2 },
                             strategy: strategy,
-                            score: strategy.expected31
+                            score: strategy.score
                         });
                     }
                 }
@@ -817,7 +853,7 @@
                 container.innerHTML = `
                     <div class="loading">
                         <div>🔍 Analyse des Métamorph...</div>
-                        <div>Recherche des meilleurs couples pour maximiser les 31</div>
+                        <div>Recherche des meilleurs couples (tous les Métamorph sont considérés)</div>
                     </div>
                 `;
             }
@@ -842,7 +878,7 @@
                     container.innerHTML = `
                         <div class="loading">
                             ❌ Aucun couple optimal trouvé.<br>
-                            Vérifiez que vous avez saisi au moins 2 Métamorph avec des IVs à 31.
+                            Vérifiez que vous avez saisi au moins 2 Métamorph.
                         </div>
                     `;
                     return;
@@ -874,7 +910,7 @@
                         <h4>📦 Métamorph non utilisés (${unusedDittos.length})</h4>
                         <p>Ces Métamorph n'ont pas été sélectionnés pour former des couples :</p>
                         <div style="margin-top: 10px; font-size: 0.9em;">
-                            ${unusedDittos.map(d => `Métamorph #${d.index + 1} (${d.score}×31)`).join(', ')}
+                            ${unusedDittos.map(d => `Métamorph #${d.index + 1} (${d.has31 ? d.score + '×31' : 'sans 31'})`).join(', ')}
                         </div>
                     </div>`;
                 }
@@ -905,7 +941,7 @@
 
                 let itemsHtml = `<div class="items-summary">
                     <h4>🎁 Objets recommandés</h4>
-                    <p>Distribution optimale pour maximiser les 31 dans les œufs :</p>
+                    <p>Distribution optimale pour maximiser les chances d'obtenir des 31 :</p>
                     <div class="items-grid">`;
 
                 Object.keys(itemUsage).forEach(item => {
@@ -942,7 +978,7 @@
                         <div class="couple-header">
                             <h3>Couple #${pairNumber}</h3>
                             <div class="couple-score">
-                                ${pair.strategy.expected31}×31 garantis
+                                ${pair.strategy.expected31.toFixed(2)}×31 attendus
                             </div>
                         </div>
                         <div class="parents">
@@ -959,7 +995,7 @@
                                 <strong>${pair.strategy.type.replace(/_/g, ' ').toUpperCase()}</strong><br>
                                 ${pair.strategy.explanation}
                                 <div class="probability-info">
-                                    Seuls les 31 comptent - Les autres IVs sont ignorés
+                                    Tous les Métamorph sont considérés dans l'optimisation
                                 </div>
                             </div>
                         </div>
@@ -979,13 +1015,16 @@
                     `;
                 }).join('');
                 
+                const warning = !ditto.has31 ? '<div class="no-31-warning">⚠️ Aucun 31 - Utile pour les IVs aléatoires</div>' : '';
+                
                 return `
                     <div class="parent">
                         <h4>${title} (Métamorph #${ditto.index + 1})</h4>
-                        <div>${ditto.score}×31</div>
+                        <div>${ditto.has31 ? ditto.binaryIVs.reduce((a, b) => a + b, 0) + '×31' : 'Aucun 31'}</div>
                         <div class="binary-display" title="Représentation binaire: 1=31, 0=autre">
                             ${ditto.binaryString}
                         </div>
+                        ${warning}
                         <div class="iv-display">
                             ${ivDisplays}
                         </div>
